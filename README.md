@@ -68,7 +68,7 @@ wallboard-dashboard/
 │   └── wallboard_theme.yaml    # Apple-style theme
 ├── packages/
 │   └── wallboard_package.yaml  # Logic, Sensors & Automations
-├── config/                     # Copy these .example files to /config/wallboard/
+├── examples/                   # Copy these .example files into /config/wallboard/
 │   ├── entities.yaml.example   # Entity mapping
 │   ├── events.yaml.example     # Countdown events
 │   ├── school_calendar.yaml.example
@@ -87,7 +87,7 @@ wallboard-dashboard/
 This dashboard uses a **mapping file approach** — you configure your entities in one place, and the dashboard references them automatically.
 
 1. Create a folder in Home Assistant: `/config/wallboard/`
-2. Copy `config/*.example` files into that folder
+2. Copy `examples/*.example` files into that folder
 3. Rename them to remove `.example` (e.g., `entities.yaml`)
 4. Edit `entities.yaml` to map your real Home Assistant entities
 
