@@ -31,10 +31,12 @@ If you have an older version of this repo (or you heavily customized the dashboa
 
 This file maps your Home Assistant entities to the dashboard's internal sensors.
 
-### Copy the Example
-```bash
-cp /config/wallboard/entities.yaml.example /config/wallboard/entities.yaml
-```
+### Create the file
+
+1. Copy `examples/entities.yaml.example` into your Home Assistant config folder: `/config/wallboard/`
+2. Rename it to remove `.example` so you end up with: `/config/wallboard/entities.yaml`
+
+(These steps are also covered in **INSTALL.md**.)
 
 ### Required Entities
 
@@ -98,10 +100,10 @@ team_4: sensor.team_tracker_4
 
 This file defines countdown events shown in the dashboard.
 
-### Copy the Example
-```bash
-cp /config/wallboard/events.yaml.example /config/wallboard/events.yaml
-```
+### Create the file
+
+1. Copy `examples/events.yaml.example` into `/config/wallboard/`
+2. Rename it to: `/config/wallboard/events.yaml`
 
 ### Event Format
 
@@ -149,10 +151,10 @@ Browse all icons at [Material Design Icons](https://materialdesignicons.com/)
 
 Defines school days, breaks, and special schedules.
 
-### Copy the Example
-```bash
-cp /config/wallboard/school_calendar.yaml.example /config/wallboard/school_calendar.yaml
-```
+### Create the file (optional)
+
+1. Copy `examples/school_calendar.yaml.example` into `/config/wallboard/`
+2. Rename it to: `/config/wallboard/school_calendar.yaml`
 
 ### Configuration
 
@@ -202,10 +204,10 @@ bus_times:
 
 Defines rotating lunch menus for up to 2 schools.
 
-### Copy the Example
-```bash
-cp /config/wallboard/school_menus.yaml.example /config/wallboard/school_menus.yaml
-```
+### Create the file (optional)
+
+1. Copy `examples/school_menus.yaml.example` into `/config/wallboard/`
+2. Rename it to: `/config/wallboard/school_menus.yaml`
 
 ### Configuration
 
@@ -249,8 +251,9 @@ This project is designed so you can disable data sources in `entities.yaml` with
 Note: disabling a feature stops its data and logic, but the corresponding card may still appear (usually showing placeholders). If you want to remove a card entirely from the layout, follow **docs/CUSTOMIZATION.md**.
 
 ### Disable School Features
-1. In `entities.yaml`, set `school_features_enabled: false`.
-2. (Optional) Remove the lunch cards from the layout: see **docs/CUSTOMIZATION.md**.
+1. Do not create `school_calendar.yaml` and `school_menus.yaml` in `/config/wallboard/`.
+2. Restart Home Assistant.
+3. (Optional) Remove the school/lunch cards from the layout: see **docs/CUSTOMIZATION.md**.
 
 ### Disable Sports
 1. In `entities.yaml`, set `team_1` through `team_4` to `none`.
