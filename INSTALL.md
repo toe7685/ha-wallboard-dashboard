@@ -84,9 +84,10 @@ Move the files from the download folder to your Home Assistant `/config/` direct
 │   ├── events.yaml.example
 │   ├── school_calendar.yaml.example
 │   └── school_menus.yaml.example
-└── www/
-    ├── school_1_logo.png
-    └── school_2_logo.png
+├── www/
+│   ├── school_1_logo.png
+│   └── school_2_logo.png
+└── dashboards/              <-- Optional: store dashboard YAML files here
 ```
 
 ---
@@ -115,9 +116,9 @@ frontend:
 
 1. Go to the `/config/wallboard/` folder.
 2. Rename the files to remove `.example`:
-   *   `entities.yaml.example` → `entities.yaml`
-   *   `events.yaml.example` → `events.yaml`
-   *   (And the school files if you need them)
+   - `entities.yaml.example` → `entities.yaml`
+   - `events.yaml.example` → `events.yaml`
+   - (And the school files if you need them)
 3. Open `entities.yaml` and update the values to match your Home Assistant entities (weather, calendars, etc.).
 
 *See [CONFIGURATION.md](CONFIGURATION.md) for full details.*
@@ -142,6 +143,7 @@ frontend:
 3. **No manual edits required**
    - All entity IDs and location settings are configured in `/config/wallboard/entities.yaml`.
    - If the radar or week planner is wrong, fix it there (see [CONFIGURATION.md](CONFIGURATION.md)).
+   - The only thing you may change here is the dashboard **title** (it affects the URL you use for kiosk mode).
 
 4. Click **Save**.
 
@@ -170,10 +172,9 @@ Open your new Wallboard dashboard.
 For a wall-mounted tablet (Fire Tablet, iPad, etc.):
 
 1. Install **Fully Kiosk Browser** (Android) or use a fullscreen browser.
-2. Navigate to your dashboard URL:
-   `http://YOUR_HA_IP:8123/lovelace-wallboard/wallboard`
-   *(Note: The URL might differ if you named the dashboard differently).*
-3. The dashboard will automatically hide the header and sidebar thanks to Kiosk Mode.
+2. Open the Wallboard dashboard in Home Assistant on any computer and copy the URL from your browser.
+3. Paste that URL into your tablet kiosk browser.
+4. The dashboard will automatically hide the header and sidebar thanks to Kiosk Mode.
 
 ---
 
