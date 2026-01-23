@@ -1,0 +1,46 @@
+name: Bug report
+description: Something in this repo is broken (not general HA support)
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. This repo can’t debug your entire Home Assistant instance.
+        Please fill out the details below so this is actionable.
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: "2025.1.x"
+    validations:
+      required: true
+  - type: input
+    id: install_method
+    attributes:
+      label: Install method
+      placeholder: "HA OS / Container / Core"
+    validations:
+      required: true
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened?
+      description: What did you expect vs what happened?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs/errors
+      description: Paste only the relevant section. Remove tokens/URLs.
+      render: shell
+    validations:
+      required: false
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots (optional)
+      description: Blur names/addresses if visible.
+    validations:
+      required: false
