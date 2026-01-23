@@ -1,0 +1,120 @@
+# ==============================================
+# ENTITY MAPPING (EXAMPLE)
+# ==============================================
+#
+# Purpose
+# - Central place to map YOUR entity IDs to the dashboard.
+# - This file is safe to edit and will not be overwritten by Home Assistant.
+#
+# Quick start
+# 1) Copy this file to `entities.yaml` (remove the `.example` suffix)
+# 2) Replace placeholder values with your real entity IDs
+# 3) Find entity IDs in Home Assistant:
+#    Settings → Developer Tools → States
+# 4) To disable any optional feature, set its value to: none
+#
+# Notes
+# - Use the entity_id exactly as shown in Developer Tools (case-sensitive).
+# - Keep quotes only for display labels or values with special characters.
+#
+# ==============================================
+
+# ======================
+# WEATHER ENTITIES
+# ======================
+
+# Primary weather entity used for forecast cards
+# Examples: weather.home, weather.forecast_home, weather.openweathermap
+weather_entity: weather.forecast_home
+
+
+# ======================
+# CALENDAR ENTITIES
+# ======================
+
+# Main family calendar shown in the week planner
+# Put shared family events here
+calendar_family: calendar.family
+
+# Individual calendars (color-coded in the week planner)
+# Set to none to disable a slot
+calendar_person_1: calendar.person_1
+calendar_person_2: calendar.person_2
+calendar_person_3: calendar.person_3
+calendar_person_4: none
+
+# Display names (used only for labels in the UI)
+person_1_name: "Person 1"
+person_2_name: "Person 2"
+person_3_name: "Person 3"
+person_4_name: "Person 4"
+
+# Calendar colors (CSS hex values)
+person_1_color: "#0A84FF"   # Blue
+person_2_color: "#34C759"   # Green
+person_3_color: "#FF9F0A"   # Orange
+person_4_color: "#AF52DE"   # Purple
+family_color: "#6B7280"     # Gray
+holidays_color: "#AF52DE"   # Purple
+
+# Holidays calendar (optional)
+calendar_holidays: calendar.holidays
+
+
+# ======================
+# MEALS CALENDAR (Optional)
+# ======================
+
+# Dinner planning calendar (optional)
+# Event title: meal name
+# Event description: optional image URL
+# Set to none to disable the dinner card
+calendar_meals: calendar.meals
+
+
+# ======================
+# SPORTS TEAMS (Optional)
+# ======================
+
+# Requires Team Tracker integration (HACS → Integrations)
+# Docs: https://github.com/vasqued2/ha-teamtracker
+# Set to "none" to disable any team slot
+
+team_1: sensor.team_tracker_1
+team_2: sensor.team_tracker_2
+team_3: sensor.team_tracker_3
+team_4: sensor.team_tracker_4
+
+
+# ======================
+# SCHOOL FEATURES (Optional)
+# ======================
+
+# Master toggle for all school-related cards
+school_features_enabled: true
+
+# School names (displayed in lunch cards)
+school_1_name: "School 1"
+school_2_name: "School 2"
+
+# School logo paths (place files in `config/www/` so they resolve under `/local/`)
+school_1_logo: "/local/school_1_logo.png"
+school_2_logo: "/local/school_2_logo.png"
+
+# School accent colors
+school_1_color: "#0A84FF"
+school_2_color: "#FF3B30"
+
+
+# ======================
+# RADAR MAP
+# ======================
+
+# Radar coordinates
+# Recommended: store these in `secrets.yaml` for privacy
+# (You can hardcode numbers here temporarily for testing)
+radar_center_latitude: !secret wallboard_radar_lat
+radar_marker_latitude: !secret wallboard_radar_marker_lat
+
+# Typical values: 6–9 (higher = more zoomed in)
+radar_zoom_level: 7

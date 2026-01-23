@@ -1,0 +1,429 @@
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                     FAMILY WALLBOARD - CONFIGURATION                      ║
+# ║                                                                           ║
+# ║  INSTRUCTIONS:                                                            ║
+# ║  1. Search for [EDIT HERE] to find values you need to change.             ║
+# ║  2. Do not touch logic below the configuration sections.                  ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
+
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │                    INPUT HELPERS (Configuration)                          │
+# └───────────────────────────────────────────────────────────────────────────┘
+
+input_text:
+  # ─────────────────────────────────────────────────────────────────────────
+  # [EDIT HERE] SYSTEM CONFIGURATION
+  # ─────────────────────────────────────────────────────────────────────────
+  wallboard_weather_entity:
+    name: "Wallboard Weather Entity"
+    initial: "weather.forecast_home" # <-- Your weather entity ID
+    max: 255
+
+  # Daily fun content (populated by automation - do not edit)
+  wallboard_daily_thought:
+    name: "Daily Thought"
+    max: 255
+  wallboard_daily_joke:
+    name: "Daily Joke"
+    max: 255
+  wallboard_daily_fact:
+    name: "Daily Fact"
+    max: 255
+
+input_boolean:
+  wallboard_school_day_override:
+    name: "Wallboard: School Day Override"
+    icon: mdi:school
+  wallboard_bus_test_mode:
+    name: "Wallboard: Bus Timer Test Mode"
+    icon: mdi:bus-clock
+  wallboard_late_start_test:
+    name: "Wallboard: Late Start Test Mode"
+    icon: mdi:clock-alert
+
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │                         PLATFORM SENSORS                                  │
+# └───────────────────────────────────────────────────────────────────────────┘
+
+sensor:
+  - platform: time_date
+    display_options:
+      - time
+
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │                          REST SENSORS                                     │
+# └───────────────────────────────────────────────────────────────────────────┘
+
+rest:
+  - resource: https://www.beagreatteacher.com/daily-fun-fact/
+    scan_interval: 3600
+    timeout: 30
+    headers:
+      User-Agent: "Mozilla/5.0 (Home Assistant Wallboard)"
+    sensor:
+      - name: "Wallboard Fun Thought Source"
+        unique_id: wallboard_fun_thought_source
+        value_template: >-
+          {% set txt = value | regex_replace(find='<[^>]*>', replace=' ') | regex_replace(find='\\s+', replace=' ') %}
+          {% set parts = txt.split('Thought of the Day') %}
+          {{ parts[1].split('Joke of the Day')[0] | trim | truncate(255, true, '') if parts|length > 1 else '' }}
+
+      - name: "Wallboard Fun Joke Source"
+        unique_id: wallboard_fun_joke_source
+        value_template: >-
+          {% set txt = value | regex_replace(find='<[^>]*>', replace=' ') | regex_replace(find='\\s+', replace=' ') %}
+          {% set parts = txt.split('Joke of the Day') %}
+          {{ parts[1].split('Random Fact of the Day')[0] | trim | truncate(255, true, '') if parts|length > 1 else '' }}
+
+      - name: "Wallboard Fun Fact Source"
+        unique_id: wallboard_fun_fact_source
+        value_template: >-
+          {% set txt = value | regex_replace(find='<[^>]*>', replace=' ') | regex_replace(find='\\s+', replace=' ') %}
+          {% set parts = txt.split('Random Fact of the Day') %}
+          {% if parts | length > 1 %}
+            {% set clean = parts[1].split('Journal Prompt')[0].split('wp.i18n')[0] | trim %}
+            {{ clean | truncate(255, true, '') }}
+          {% else %}{{ '' }}{% endif %}
+
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │                        TEMPLATE SENSORS                                   │
+# └───────────────────────────────────────────────────────────────────────────┘
+
+template:
+  # ─────────────────────────────────────────────────────────────────────────
+  # Clothing Recommendation Logic
+  # ─────────────────────────────────────────────────────────────────────────
+  - sensor:
+      - name: "Wallboard Clothing Hint"
+        unique_id: wallboard_clothing_hint
+        icon: mdi:hanger
+        state: >
+          {% set w_entity = states('input_text.wallboard_weather_entity') %}
+          {% set temp = state_attr(w_entity, 'apparent_temperature') | float(none) %}
+          {% if temp is none %}
+            {% set temp = state_attr(w_entity, 'temperature') | float(0) %}
+          {% endif %}
+          {% set cond = states(w_entity) %}
+          {% if cond in ['rainy', 'pouring', 'lightning-rainy'] %}Raincoat
+          {% elif cond in ['snowy', 'snowy-rainy', 'hail'] %}Winter coat
+          {% elif temp < 35 %}Winter coat + gloves
+          {% elif temp < 50 %}Light jacket
+          {% elif temp < 65 %}Hoodie
+          {% else %}T-shirt{% endif %}
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # School Day Logic
+  # ─────────────────────────────────────────────────────────────────────────
+  - binary_sensor:
+      # ╔═════════════════════════════════════════════════════════════════════╗
+      # ║ [EDIT HERE] SCHOOL CALENDAR                                         ║
+      # ╚═════════════════════════════════════════════════════════════════════╝
+      - name: "Wallboard School Day"
+        unique_id: wallboard_school_day
+        state: >
+          {% if is_state('input_boolean.wallboard_school_day_override', 'on') %}
+            true
+          {% else %}
+            {% set d = now().date() %}
+            {% set ds = d.strftime('%Y-%m-%d') %}
+
+            {# --- DATES (2025-2026 Example) --- #}
+            {% set start = ('2025-08-06' | as_datetime | as_local).date() %}
+            {% set end   = ('2026-05-22' | as_datetime | as_local).date() %}
+
+            {% set no_school = [
+              '2025-09-01', '2025-11-07', '2025-12-19', '2026-01-19', '2026-02-16'
+            ] %}
+
+            {% set in_break =
+              ('2025-10-06' <= ds <= '2025-10-10') or
+              ('2025-11-26' <= ds <= '2025-11-28') or
+              ('2025-12-22' <= ds <= '2026-01-02') or
+              ('2026-04-06' <= ds <= '2026-04-10')
+            %}
+            {# --- END DATES --- #}
+
+            {{ (start <= d <= end) and (d.weekday() < 5) and (ds not in no_school) and (not in_break) }}
+          {% endif %}
+
+      # ╔═════════════════════════════════════════════════════════════════════╗
+      # ║ [EDIT HERE] LATE START DAYS                                         ║
+      # ╚═════════════════════════════════════════════════════════════════════╝
+      - name: "Wallboard Late Start Day"
+        unique_id: wallboard_late_start_day
+        state: >
+          {% set ds = now().strftime('%Y-%m-%d') %}
+          {# --- DATES --- #}
+          {{ ds in [
+            '2026-01-07', '2026-01-21', '2026-02-04', '2026-02-18',
+            '2026-03-04', '2026-03-18', '2026-04-01', '2026-04-15',
+            '2026-04-29', '2026-05-13'
+          ] }}
+          {# --- END DATES --- #}
+
+      - name: "Wallboard Bus Timer Active"
+        unique_id: wallboard_bus_timer_active
+        state: >
+          {% set test_mode = is_state('input_boolean.wallboard_bus_test_mode', 'on') %}
+          {% set is_school = test_mode or is_state('binary_sensor.wallboard_school_day', 'on') %}
+          {% if not is_school %}false
+          {% else %}
+            {% set cur = now().hour * 60 + now().minute %}
+            {% set late = is_state('input_boolean.wallboard_late_start_test', 'on') if test_mode else is_state('binary_sensor.wallboard_late_start_day', 'on') %}
+            {% set offset = 40 if late else 0 %}
+            {# Bus times hardcoded here as fallback: 7:10 and 7:50 #}
+            {% set bus1 = 430 + offset %}
+            {% set bus2 = 470 + offset %}
+            {% set pre = 90 %}
+            {% set post = 3 %}
+            {% set d1 = bus1 - cur %}
+            {% set d2 = bus2 - cur %}
+            {{ (-post <= d1 <= pre) or (-post <= d2 <= pre) }}
+          {% endif %}
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # School Lunch Sensors
+  # ─────────────────────────────────────────────────────────────────────────
+  - sensor:
+      # ╔═════════════════════════════════════════════════════════════════════╗
+      # ║ [EDIT HERE] SCHOOL 1 LUNCH                                          ║
+      # ╚═════════════════════════════════════════════════════════════════════╝
+      - name: "Wallboard School 1 Lunch"
+        unique_id: wallboard_school_1_lunch
+        icon: mdi:food
+        state: >
+          {% set start_date = '2026-01-05' %}
+          {% set start_cycle_index = 1 %}
+          
+          {% set menu = [
+            {0:["Chicken Nuggets","Salad"], 1:["Tacos","Taco Salad"], 2:["Pizza","Yogurt"], 3:["Pasta","Salad"], 4:["Chicken Sandwich","Salad"]},
+            {0:["Hot Dog","Salad"], 1:["Rice Bowl","Salad"], 2:["Pizza","Parfait"], 3:["Chicken Tenders","Salad"], 4:["Grilled Cheese","Soup"]},
+            {0:["French Toast","Salad"], 1:["Pizza","Tacos"], 2:["Cheeseburger","Parfait"], 3:["Popcorn Chicken","Salad"], 4:["Pizza Crunchers","Salad"]}
+          ] %}
+          
+          {% set current = now().date() %}
+          {% set days_passed = (current - (start_date | as_datetime | as_local).date()).days %}
+          {% set weeks_passed = (days_passed // 7) %}
+          {% set cycle_index = (start_cycle_index + weeks_passed) % 3 %}
+          {% set day_of_week = current.weekday() %}
+          
+          {% if days_passed < 0 %}School not started
+          {% elif day_of_week > 4 %}Weekend
+          {% elif not is_state('binary_sensor.wallboard_school_day', 'on') %}No School
+          {% else %}{{ menu[cycle_index][day_of_week][0] }} or {{ menu[cycle_index][day_of_week][1] }}{% endif %}
+
+      # ╔═════════════════════════════════════════════════════════════════════╗
+      # ║ [EDIT HERE] SCHOOL 2 LUNCH                                          ║
+      # ╚═════════════════════════════════════════════════════════════════════╝
+      - name: "Wallboard School 2 Lunch"
+        unique_id: wallboard_school_2_lunch
+        icon: mdi:food
+        state: >
+          {% set start_date = '2026-01-05' %}
+          {% set start_cycle_index = 1 %}
+          
+          {% set menu = [
+            {0:["French Toast","Calzone"], 1:["Walking Tacos","Pizza"], 2:["Mozzarella Sticks","Sandwich"], 3:["Patty","Bosco Sticks"], 4:["Pizza","Crispitos"]},
+            {0:["Burgers","Calzone"], 1:["Fish & Chips","Pizza"], 2:["Deep Dish","Sandwich"], 3:["Nuggets","Bosco Sticks"], 4:["Ravioli","Crispitos"]},
+            {0:["Rice Bowl","Calzone"], 1:["Taco Mac","Pizza"], 2:["Pizza","Sandwich"], 3:["Tenders","Bosco Sticks"], 4:["Pretzel","Crispitos"]}
+          ] %}
+          
+          {% set current = now().date() %}
+          {% set days_passed = (current - (start_date | as_datetime | as_local).date()).days %}
+          {% set weeks_passed = (days_passed // 7) %}
+          {% set cycle_index = (start_cycle_index + weeks_passed) % 3 %}
+          {% set day_of_week = current.weekday() %}
+          
+          {% if days_passed < 0 %}School not started
+          {% elif day_of_week > 4 %}Weekend
+          {% elif not is_state('binary_sensor.wallboard_school_day', 'on') %}No School
+          {% else %}{{ menu[cycle_index][day_of_week][0] }} or {{ menu[cycle_index][day_of_week][1] }}{% endif %}
+
+      # ╔═════════════════════════════════════════════════════════════════════╗
+      # ║ [EDIT HERE] COUNTDOWN EVENTS                                        ║
+      # ╚═════════════════════════════════════════════════════════════════════╝
+      - name: "Wallboard Countdown Events"
+        unique_id: wallboard_countdown_events
+        state: "{{ now().strftime('%Y-%m-%d') }}"
+        attributes:
+          events: >
+            {{
+              [
+                {"title": "Valentine's Day", "date": "2/14", "icon": "mdi:heart-outline"},
+                {"title": "Easter", "date": "4/20/2025", "icon": "mdi:egg-easter"},
+                {"title": "Summer Break", "date": "5/23/2025", "icon": "mdi:beach"},
+                {"title": "Christmas", "date": "12/25", "icon": "mdi:pine-tree"}
+              ]
+            }}
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Trigger-based Sensors
+  # ─────────────────────────────────────────────────────────────────────────
+  - trigger:
+      - platform: time_pattern
+        minutes: "/1"
+      - platform: homeassistant
+        event: start
+    action:
+      - action: calendar.get_events
+        target:
+          # ════════════════════════════════════════════════════════════════════
+          # [CRITICAL] EDIT THESE CALENDARS TO MATCH YOUR SYSTEM
+          # ════════════════════════════════════════════════════════════════════
+          entity_id:
+            - calendar.family
+            - calendar.person_1
+            - calendar.person_2
+        data:
+          start_date_time: "{{ now().isoformat() }}"
+          duration:
+            hours: 72
+        response_variable: agenda
+    sensor:
+      - name: "Wallboard Next Event"
+        unique_id: wallboard_next_event
+        state: >-
+          {% set ns = namespace(best=None, best_ts=None) %}
+          {% set now_ts = as_timestamp(now()) %}
+          {% for cal_id, cal in (agenda or {}).items() %}
+            {% for e in (cal.events or []) %}
+              {% set st = as_timestamp(e.start) %}
+              {% set ignore = (e.all_day) %}
+              {% if not ignore and st is not none and st >= now_ts %}
+                {% if ns.best_ts is none or st < ns.best_ts %}
+                  {% set ns.best = e %}
+                  {% set ns.best_ts = st %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+          {{ ns.best.summary if ns.best else 'No upcoming events' }}
+        attributes:
+          start_ts: >-
+            {% set ns = namespace(best_ts=None) %}
+            {% set now_ts = as_timestamp(now()) %}
+            {% for cal_id, cal in (agenda or {}).items() %}
+              {% for e in (cal.events or []) %}
+                {% set st = as_timestamp(e.start) %}
+                {% set ignore = (e.all_day) %}
+                {% if not ignore and st is not none and st >= now_ts %}
+                  {% if ns.best_ts is none or st < ns.best_ts %}
+                    {% set ns.best_ts = st %}
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
+            {{ ns.best_ts | int if ns.best_ts is not none else none }}
+
+  - trigger:
+      - platform: time_pattern
+        seconds: "/10"
+      - platform: homeassistant
+        event: start
+    sensor:
+      - name: "Wallboard Starts In"
+        unique_id: wallboard_starts_in
+        icon: mdi:timer-outline
+        state: >
+          {% set e = states('sensor.wallboard_next_event') %}
+          {% set ts = state_attr('sensor.wallboard_next_event', 'start_ts') | float(none) %}
+          {% if e in ['unknown','unavailable','',None] or e == 'No upcoming events' or ts is none %}—
+          {% else %}
+            {% set diff = ts - as_timestamp(now()) %}
+            {% if diff < -180 %}—
+            {% elif diff <= 0 %}NOW
+            {% else %}
+              {% set mins = (diff / 60) | round(0, 'ceil') | int %}
+              {% if mins < 60 %}{{ mins }}min
+              {% else %}
+                {% set h = (mins // 60) %}
+                {% set m = (mins % 60) %}
+                {% if m == 0 %}{{ h }}hr{% else %}{{ h }}hr {{ m }}min{% endif %}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        attributes:
+          diff_min: >
+            {% set ts = state_attr('sensor.wallboard_next_event', 'start_ts') | float(none) %}
+            {{ ((ts - as_timestamp(now())) / 60) | round(0) | int if ts is not none else none }}
+
+  - trigger:
+      - platform: time_pattern
+        seconds: "/1"
+      - platform: homeassistant
+        event: start
+    sensor:
+      - name: "Wallboard Bus Countdown"
+        unique_id: wallboard_bus_countdown
+        state: >-
+          {% set test_mode = is_state('input_boolean.wallboard_bus_test_mode', 'on') %}
+          {% set is_school = test_mode or is_state('binary_sensor.wallboard_school_day', 'on') %}
+          {% if not is_school %}idle
+          {% else %}
+            {% set late = is_state('input_boolean.wallboard_late_start_test', 'on') if test_mode else is_state('binary_sensor.wallboard_late_start_day', 'on') %}
+            {% set offset = 40 if late else 0 %}
+            {# [EDIT HERE] BUS TIMES (minutes from midnight) #}
+            {% set bus_times = [430 + offset, 470 + offset] %}
+            {# [END EDIT] #}
+            {% set now_ts = as_timestamp(now()) %}
+            {% set today = now().strftime('%Y-%m-%d') %}
+            {% set candidates = namespace(list=[]) %}
+            {% for t in bus_times %}
+              {% set h = (t // 60) | int %}
+              {% set m = (t % 60) | int %}
+              {% set ts = as_timestamp(today ~ " " ~ "%02d:%02d:00" | format(h, m)) %}
+              {% if ts > (now_ts - 180) %}
+                {% set candidates.list = candidates.list + [ts] %}
+              {% endif %}
+            {% endfor %}
+            {% if candidates.list | length > 0 %}{{ ((candidates.list | sort)[0] - now_ts) | int }}
+            {% else %}idle{% endif %}
+          {% endif %}
+        attributes:
+          next_bus_ts: >-
+            {% set s = states('sensor.wallboard_bus_countdown') %}
+            {% if s == 'idle' or s in ['unknown','unavailable'] %}
+              {{ none }}
+            {% else %}
+              {{ (as_timestamp(now()) + s | float) }}
+            {% endif %}
+          bus_time_str: >-
+            {% set ts = state_attr('sensor.wallboard_bus_countdown', 'next_bus_ts') %}
+            {{ ts | timestamp_custom('%-I:%M %p') if ts is not none else "" }}
+
+  - trigger:
+      - platform: time_pattern
+        minutes: "*"
+    sensor:
+      - name: "Wallboard Clock Trigger"
+        unique_id: wallboard_clock_trigger
+        state: "{{ now().strftime('%Y-%m-%d %H:%M') }}"
+
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │                          AUTOMATIONS                                      │
+# └───────────────────────────────────────────────────────────────────────────┘
+
+automation:
+  - id: wallboard_daily_fun_snapshot
+    alias: "Wallboard: Daily Fun Snapshot"
+    mode: single
+    trigger:
+      - platform: time
+        at: "23:50:00"
+    action:
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.wallboard_daily_thought
+        data:
+          value: "{{ states('sensor.wallboard_fun_thought_source') | truncate(255, true, '') }}"
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.wallboard_daily_joke
+        data:
+          value: "{{ states('sensor.wallboard_fun_joke_source') | truncate(255, true, '') }}"
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.wallboard_daily_fact
+        data:
+          value: "{{ states('sensor.wallboard_fun_fact_source') | truncate(255, true, '') }}"
+```

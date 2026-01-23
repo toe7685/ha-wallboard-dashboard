@@ -1,0 +1,168 @@
+# ==============================================================================
+# SCHOOL LUNCH MENUS (Example)
+# ==============================================================================
+# Purpose
+# - Provides a simple 3-week rotating (Mon–Fri) lunch menu for two schools.
+# - Intended to be read by Home Assistant template logic in your wallboard package.
+#
+# Quick start
+# 1) Copy/rename this file to `school_menus.yaml` (remove `.example`).
+# 2) Replace the placeholder menu items with your real menus.
+# 3) Set `menu_cycle_start` to the first date your district starts a Week 0/1/2 cycle.
+# 4) Set `starting_cycle_index` to match which week begins on that date (0, 1, or 2).
+# 5) Restart Home Assistant (or reload your package if your setup supports it).
+#
+# Notes / assumptions
+# - The cycle is 3 weeks long (indexes 0, 1, 2).
+# - Each week entry must include keys: monday, tuesday, wednesday, thursday, friday.
+# - Each day’s value is a list of one or more options (strings).
+# - Weekends are not represented here.
+#
+# Validation checklist (common gotchas)
+# - Use 2 spaces for indentation (no tabs).
+# - Keep quotes around menu items if they contain special characters like ':' or '#'.
+# - Ensure each school has exactly 3 week blocks under `*_menus`.
+# ============================================================================== 
+
+# =====================
+# MENU CYCLE SETTINGS
+# =====================
+
+# Date when cycle tracking starts (YYYY-MM-DD).
+# Set this to a known day when you are confident which cycle week it was.
+menu_cycle_start: "2026-01-05"
+
+# Which cycle week begins on menu_cycle_start.
+# Allowed values: 0, 1, 2
+starting_cycle_index: 1
+
+
+# =====================
+# SCHOOL 1 MENUS
+# 3-week rotation, Monday–Friday
+# Each day is a list of options
+# =====================
+
+school_1_menus:
+  # ---- Week 0 ----
+  - monday:
+      - "Chicken Nuggets"
+      - "Garden Salad"
+    tuesday:
+      - "Nacho Supreme"
+      - "Taco Salad"
+    wednesday:
+      - "Mozzarella Sticks"
+      - "Yogurt Parfait"
+    thursday:
+      - "Pasta with Sauce"
+      - "Caesar Salad"
+    friday:
+      - "Chicken Sandwich"
+      - "Chef Salad"
+
+  # ---- Week 1 ----
+  - monday:
+      - "Hot Dog"
+      - "Garden Salad"
+    tuesday:
+      - "Chicken Rice Bowl"
+      - "Taco Salad"
+    wednesday:
+      - "Personal Pizza"
+      - "Yogurt Parfait"
+    thursday:
+      - "Chicken Tenders"
+      - "Caesar Salad"
+    friday:
+      - "Grilled Cheese & Soup"
+      - "Chef Salad"
+
+  # ---- Week 2 ----
+  - monday:
+      - "French Toast & Sausage"
+      - "Garden Salad"
+    tuesday:
+      - "French Bread Pizza"
+      - "Taco Salad"
+    wednesday:
+      - "Cheeseburger"
+      - "Yogurt Parfait"
+    thursday:
+      - "Popcorn Chicken"
+      - "Caesar Salad"
+    friday:
+      - "Pizza Crunchers"
+      - "Chef Salad"
+
+
+# =====================
+# SCHOOL 2 MENUS
+# 3-week rotation, Monday–Friday
+# =====================
+
+school_2_menus:
+  # ---- Week 0 ----
+  - monday:
+      - "French Toast Sticks"
+      - "Pepperoni Calzone"
+    tuesday:
+      - "Walking Tacos"
+      - "Personal Pan Pizza"
+    wednesday:
+      - "Pizza Crunchers"
+      - "Beef & Cheddar"
+    thursday:
+      - "Chicken Patty Sandwich"
+      - "Bosco Sticks"
+    friday:
+      - "French Bread Pizza"
+      - "Chicken Crispitos"
+
+  # ---- Week 1 ----
+  - monday:
+      - "Assorted Burgers"
+      - "Pepperoni Calzone"
+    tuesday:
+      - "Fish & Chips"
+      - "Personal Pan Pizza"
+    wednesday:
+      - "Deep Dish Pizza"
+      - "Beef & Cheddar"
+    thursday:
+      - "Chicken Nuggets"
+      - "Bosco Sticks"
+    friday:
+      - "Ravioli & Garlic Toast"
+      - "Chicken Crispitos"
+
+  # ---- Week 2 ----
+  - monday:
+      - "Chicken Rice Bowl"
+      - "Pepperoni Calzone"
+    tuesday:
+      - "Spicy Taco Mac"
+      - "Personal Pan Pizza"
+    wednesday:
+      - "Pizza Slices"
+      - "Beef & Cheddar"
+    thursday:
+      - "Chicken Tenders"
+      - "Bosco Sticks"
+    friday:
+      - "Soft Pretzel & Cheese"
+      - "Chicken Crispitos"
+
+
+# =====================
+# DISPLAY FORMAT
+# =====================
+
+# How to display multiple options.
+# - first_only: show only the first option
+# - all: show all options joined by option_separator
+# - first_or_second: show first option, and if present append option_separator + second option
+display_format: "first_or_second"
+
+# Separator used when combining multiple options.
+option_separator: " or "

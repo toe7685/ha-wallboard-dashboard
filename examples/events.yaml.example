@@ -1,0 +1,149 @@
+# ==============================================
+# COUNTDOWN EVENTS (events.yaml.example)
+# ==============================================
+#
+# Purpose
+# - This file powers the dashboard "Countdown / Events" card(s).
+# - It is a simple list of events with a title, date, and icon.
+#
+# Install
+# 1) Copy this file to: /config/<your_dashboard_folder>/events.yaml
+#    - Remove the .example extension
+# 2) Edit the events below to match your family/school schedule.
+# 3) Restart Home Assistant (or reload the dashboard if applicable).
+#
+# Date formats supported by this file
+# - "M/D"        -> Annual event (repeats every year)
+# - "M/D/YYYY"   -> One-time event (specific date)
+# - "M/D/YY"     -> One-time event (specific date)
+#
+# Notes
+# - Movable holidays (Easter, Thanksgiving, etc.) change every year.
+#   If you want them accurate, use a specific date (M/D/YYYY) and update yearly.
+# - Icons use Material Design Icons (MDI): https://materialdesignicons.com/
+# - Keep dates quoted as strings.
+#
+# ==============================================
+
+events:
+  # ======================
+  # HOLIDAYS (annual unless noted)
+  # ======================
+  - title: "New Year's Day"
+    date: "1/1"
+    icon: "mdi:calendar-blank-outline"
+
+  - title: "Valentine's Day"
+    date: "2/14"
+    icon: "mdi:heart-outline"
+
+  # Movable holiday (update yearly if you want it accurate)
+  - title: "Easter (example date)"
+    date: "4/5/2026"
+    icon: "mdi:egg-easter"
+
+  # Movable holiday (2nd Sunday in May)
+  - title: "Mother's Day (example date)"
+    date: "5/10/2026"
+    icon: "mdi:flower-outline"
+
+  # Movable holiday (last Monday in May)
+  - title: "Memorial Day (example date)"
+    date: "5/25/2026"
+    icon: "mdi:flag"
+
+  # Movable holiday (3rd Sunday in June)
+  - title: "Father's Day (example date)"
+    date: "6/21/2026"
+    icon: "mdi:account-heart-outline"
+
+  - title: "4th of July"
+    date: "7/4"
+    icon: "mdi:firework"
+
+  # Movable holiday (1st Monday in September)
+  - title: "Labor Day (example date)"
+    date: "9/7/2026"
+    icon: "mdi:briefcase-outline"
+
+  - title: "Halloween"
+    date: "10/31"
+    icon: "mdi:pumpkin-outline"
+
+  # Movable holiday (4th Thursday in November)
+  - title: "Thanksgiving (example date)"
+    date: "11/26/2026"
+    icon: "mdi:turkey"
+
+  - title: "Christmas"
+    date: "12/25"
+    icon: "mdi:pine-tree"
+
+  # ======================
+  # BIRTHDAYS (replace with your family's birthdays)
+  # ======================
+  - title: "Parent 1 Birthday"
+    date: "3/15"
+    icon: "mdi:cake-variant-outline"
+
+  - title: "Parent 2 Birthday"
+    date: "6/20"
+    icon: "mdi:cake-variant-outline"
+
+  - title: "Child 1 Birthday"
+    date: "8/10"
+    icon: "mdi:cake-variant-outline"
+
+  - title: "Child 2 Birthday"
+    date: "11/5"
+    icon: "mdi:cake-variant-outline"
+
+  # ======================
+  # ANNIVERSARIES
+  # ======================
+  - title: "Wedding Anniversary"
+    date: "6/23"
+    icon: "mdi:heart-outline"
+
+  # ======================
+  # SCHOOL EVENTS (typically year-specific)
+  # Update these to your district calendar each year.
+  # ======================
+  - title: "First Day of School (example)"
+    date: "8/12/2026"
+    icon: "mdi:school-outline"
+
+  - title: "Fall Break (example)"
+    date: "10/6/2026"
+    icon: "mdi:leaf"
+
+  - title: "Winter Break Starts (example)"
+    date: "12/22/2026"
+    icon: "mdi:snowflake"
+
+  - title: "Spring Break Starts (example)"
+    date: "4/5/2027"
+    icon: "mdi:beach"
+
+  - title: "Last Day of School (example)"
+    date: "5/22/2027"
+    icon: "mdi:school-outline"
+
+  # ======================
+  # SPORTS & OTHER EVENTS
+  # ======================
+  # Sports dates change every year; keep as specific dates if you use them.
+  - title: "Super Bowl (example date)"
+    date: "2/8/2026"
+    icon: "mdi:football"
+
+  - title: "Summer Vacation Starts (example)"
+    date: "7/15/2026"
+    icon: "mdi:airplane"
+
+  # ======================
+  # ADD YOUR OWN EVENTS BELOW
+  # ======================
+  # - title: "Example Event"
+  #   date: "9/30/2026"
+  #   icon: "mdi:calendar-star"

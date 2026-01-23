@@ -1,0 +1,117 @@
+# ==============================================
+# SCHOOL CALENDAR CONFIGURATION (school_calendar.yaml.example)
+# ==============================================
+#
+# What this file does
+# - Drives the dashboard's school-day logic (school/no-school), breaks, and late-start behavior.
+# - Feeds the bus countdown logic via the `bus_schedule` section.
+#
+# Install
+# 1) Copy/rename this file to: /config/<your_dashboard_folder>/school_calendar.yaml
+#    - Remove the .example extension
+# 2) Update dates to match your school district calendar.
+# 3) Restart Home Assistant (Settings → System → Restart) or reload the package if your setup supports it.
+#
+# Date rules
+# - All dates MUST be quoted strings in YYYY-MM-DD format.
+# - Ranges (`breaks`) are inclusive of BOTH start and end.
+# - `no_school_days` is for single days only.
+#
+# Tips
+# - Put comments on the same line as the date for quick scanning.
+# - If something looks wrong on the dashboard, verify:
+#   - `binary_sensor.school_day`
+#   - `binary_sensor.bus_timer_active`
+#   - any related sensors in Developer Tools → States
+#
+# ==============================================
+
+# ======================
+# SCHOOL YEAR DATES
+# ======================
+# Defines the active date window for school-year logic.
+school_year_start: "2025-08-06"
+school_year_end: "2026-05-22"
+
+# ======================
+# NO SCHOOL DAYS (single-day)
+# ======================
+# Examples: holidays, teacher work days, conference days.
+no_school_days:
+  - "2025-09-01"  # Labor Day
+  - "2025-11-07"  # Teacher Professional Day
+  - "2025-12-19"  # Teacher Professional Day
+  - "2026-01-19"  # MLK Day
+  - "2026-02-16"  # Presidents Day
+  # Add more single days as needed
+
+# ======================
+# SCHOOL BREAKS (multi-day)
+# ======================
+# Start/end are inclusive.
+breaks:
+  - name: "Fall Break"
+    start: "2025-10-06"
+    end: "2025-10-10"
+
+  - name: "Thanksgiving Break"
+    start: "2025-11-26"
+    end: "2025-11-28"
+
+  - name: "Winter Break"
+    start: "2025-12-22"
+    end: "2026-01-02"
+
+  - name: "Spring Break"
+    start: "2026-04-06"
+    end: "2026-04-10"
+
+# ======================
+# LATE START / EARLY RELEASE DAYS
+# ======================
+# Days with modified schedules (affects bus timer logic).
+# Only include dates that are still considered "school days".
+late_start_days:
+  - "2026-01-07"
+  - "2026-01-21"
+  - "2026-02-04"
+  - "2026-02-18"
+  - "2026-03-04"
+  - "2026-03-18"
+  - "2026-04-01"
+  - "2026-04-15"
+  - "2026-04-29"
+  - "2026-05-13"
+
+# ======================
+# BUS SCHEDULE
+# ======================
+# Times are integers: minutes from midnight (24-hour clock).
+# Example: 7:10 AM = 7*60 + 10 = 430
+bus_schedule:
+  # Normal day bus times
+  normal_times:
+    - 430  # 7:10 AM - First bus
+    - 470  # 7:50 AM - Second bus
+
+  # Minutes added to bus times on late start days
+  late_start_offset: 40
+
+  # How many minutes BEFORE bus time to start showing the countdown
+  countdown_start_minutes: 90
+
+  # How many minutes AFTER bus time to keep showing (for a short "NOW" window)
+  countdown_end_minutes: 3
+
+# ======================
+# QUICK REFERENCE: TIME CONVERSION
+# ======================
+# 6:00 AM = 360
+# 6:30 AM = 390
+# 7:00 AM = 420
+# 7:10 AM = 430
+# 7:30 AM = 450
+# 7:50 AM = 470
+# 8:00 AM = 480
+# 8:30 AM = 510
+# 9:00 AM = 540

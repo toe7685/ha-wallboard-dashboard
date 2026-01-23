@@ -1,0 +1,78 @@
+# ======================
+# SECRETS - NEVER COMMIT
+# ======================
+secrets.yaml
+secrets.yml
+.storage/
+*.secret
+*.secrets
+
+# User configuration (contains personal data)
+config/entities.yaml
+config/events.yaml
+config/school_calendar.yaml
+config/school_menus.yaml
+
+# Only commit the .example versions
+!config/*.example
+
+# ======================
+# HOME ASSISTANT
+# ======================
+.HA_VERSION
+home-assistant.log
+home-assistant_v2.db
+home-assistant_v2.db-shm
+home-assistant_v2.db-wal
+
+# Backups
+*.bak
+*.backup
+backups/
+
+# ======================
+# SYSTEM FILES
+# ======================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ======================
+# IDE / EDITOR
+# ======================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# ======================
+# PYTHON
+# ======================
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.env
+
+# ======================
+# NODE
+# ======================
+node_modules/
+npm-debug.log
+
+# ======================
+# TEMPORARY FILES
+# ======================
+*.tmp
+*.temp
+*.log
+.cache/

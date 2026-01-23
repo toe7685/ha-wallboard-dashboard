@@ -1,0 +1,808 @@
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                     FAMILY WALLBOARD DASHBOARD                             ║
+# ║                                                                            ║
+# ║  ⚠️ IMPORTANT EDITING INSTRUCTIONS:                                        ║
+# ║  1. Most logic is in packages/wallboard_package.yaml (Edit that first!)    ║
+# ║  2. In THIS file, you must perform a FIND & REPLACE for:                   ║
+# ║     - "40.71" -> Your actual Latitude                                      ║
+# ║     - "calendar.family" -> Your actual Calendar Entity IDs                 ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
+
+views:
+  - title: Wallboard
+    path: wallboard
+    theme: wallboard_theme
+    kiosk_mode:
+      kiosk: true
+      hide_header: true
+      hide_sidebar: true
+    type: custom:grid-layout
+    # Global dashboard styling variables
+    card_mod:
+      style: |
+        :host {
+          --bp-secondary: rgba(17,24,39,0.35);
+          --bp-tertiary: rgba(17,24,39,0.25);
+          --bp-card-radius: 24px;
+          --bp-card-pad: 20px;
+          overflow: hidden !important;
+        }
+        hui-view, hui-masonry-view, hui-panel-view, #view { overflow: hidden !important; }
+        ha-card { overflow: visible !important; }
+        ::-webkit-scrollbar { display: none !important; width: 0px !important; height: 0px !important; background: transparent !important; }
+        * { scrollbar-width: none !important; -ms-overflow-style: none !important; overflow-y: hidden !important; }
+    layout:
+      grid-template-columns: 1fr 1fr 1fr 1fr
+      grid-template-rows: 260px minmax(0, 120px) minmax(0, 120px) minmax(0, 360px) 170px
+      grid-auto-rows: 0
+      gap: 16px
+      padding: 24px
+      height: 100vh
+      align-items: stretch
+      justify-items: stretch
+      grid-template-areas: |
+        "time      weather    forecast  next"
+        "lunch     lunch      weekly    family"
+        "dinner    dinner     weekly    family"
+        "fun       countdown  radar     family"
+        "team1     team2      team3     team4"
+
+    cards:
+      # ════════════════════════════════════════════════════════════════════════
+      # TIME & DATE
+      # ════════════════════════════════════════════════════════════════════════
+      - type: custom:button-card
+        view_layout:
+          grid-area: time
+          place-self: stretch
+        show_name: false
+        show_icon: false
+        entity: sensor.wallboard_clock_trigger
+        tap_action:
+          action: none
+        # [ANCHOR DEFINITION] - Reusable styles for all cards
+        card_mod: &card_mod_fill
+          style: |
+            :host { height: 100% !important; width: 100% !important; display: block !important; }
+            ha-card { height: 100% !important; width: 100% !important; border-radius: 24px !important; }
+        styles:
+          card: &card_style
+            - width: 100%
+            - height: 100%
+            - padding: 24px
+            - background: '#FFFFFF'
+            - border-radius: 24px
+            - border: none
+            - box-shadow: 0px 4px 20px rgba(0,0,0,0.03)
+            - display: flex
+            - align-items: center
+            - justify-content: center
+          grid:
+            - grid-template-areas: '"time" "date"'
+            - grid-template-rows: min-content min-content
+            - align-content: center
+            - justify-items: center
+            - gap: 6px
+        custom_fields:
+          time: |
+            [[[
+              const now = new Date();
+              const h = ((now.getHours() + 11) % 12) + 1;
+              const m = String(now.getMinutes()).padStart(2, '0');
+              const ap = now.getHours() >= 12 ? 'PM' : 'AM';
+              return `<div style="display:flex;align-items:baseline;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',Roboto,sans-serif;"><span style="font-size:92px;font-weight:700;letter-spacing:-3px;line-height:0.9;color:#111827;font-variant-numeric:tabular-nums;">${h}:${m}</span><span style="font-size:26px;font-weight:700;color:rgba(17,24,39,0.34);margin-left:12px;">${ap}</span></div>`;
+            ]]]
+          date: |
+            [[[
+              const now = new Date();
+              const wd = now.toLocaleDateString('en-US', { weekday: 'long' });
+              const mo = now.toLocaleDateString('en-US', { month: 'long' });
+              const dy = now.getDate();
+              const R = '#FF383C';
+              return `<div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',Roboto,sans-serif;display:flex;align-items:baseline;gap:10px;justify-content:center;"><span style="font-size:22px;font-weight:800;color:${R};">${wd}</span><span style="font-size:16px;font-weight:800;color:rgba(17,24,39,0.30);">•</span><span style="font-size:22px;font-weight:800;color:rgba(17,24,39,0.55);">${mo}</span><span style="font-size:22px;font-weight:800;color:${R};">${dy}</span></div>`;
+            ]]]
+
+      # ════════════════════════════════════════════════════════════════════════
+      # CURRENT WEATHER
+      # ════════════════════════════════════════════════════════════════════════
+      - type: custom:button-card
+        view_layout:
+          grid-area: weather
+          place-self: stretch
+        entity: weather.forecast_home
+        show_name: false
+        show_icon: false
+        tap_action:
+          action: none
+        triggers_update:
+          - weather.forecast_home
+          - sensor.wallboard_clothing_hint
+        card_mod: *card_mod_fill
+        styles:
+          card: *card_style
+          grid:
+            - grid-template-areas: '"main"'
+            - align-content: center
+            - justify-items: center
+        custom_fields:
+          main: |
+            [[[
+              const w = entity;
+              const hint = states['sensor.wallboard_clothing_hint'];
+              if (!w) return '<div style="color:rgba(17,24,39,0.4);">Weather unavailable</div>';
+
+              const APPLE = { red:'#FF383C', orange:'#FF8D28', yellow:'#FFCC00', green:'#34C759', mint:'#00C8B3', blue:'#0088FF', gray:'#8E8E93', text:'#111827' };
+
+              const temp = Math.round(w.attributes?.temperature || 0);
+              const cond = w.state || 'cloudy';
+
+              const tempColor = (t) => {
+                if (t < 32) return APPLE.blue;
+                if (t <= 50) return APPLE.mint;
+                if (t <= 68) return APPLE.green;
+                if (t <= 80) return APPLE.yellow;
+                if (t <= 94) return APPLE.orange;
+                return APPLE.red;
+              };
+
+              const iconMap = {
+                'sunny': 'mdi:weather-sunny', 'clear-night': 'mdi:weather-night',
+                'partlycloudy': 'mdi:weather-partly-cloudy', 'cloudy': 'mdi:weather-cloudy',
+                'rainy': 'mdi:weather-rainy', 'pouring': 'mdi:weather-pouring',
+                'lightning-rainy': 'mdi:weather-lightning-rainy', 'snowy': 'mdi:weather-snowy',
+                'fog': 'mdi:weather-fog'
+              };
+
+              const icon = iconMap[cond] || 'mdi:weather-cloudy';
+              const color = tempColor(temp);
+              const hintText = hint?.state || 'T-shirt';
+
+              let clothingIcon = 'mdi:tshirt-crew';
+              if (hintText.includes('coat')) clothingIcon = 'mdi:coat-rack';
+              else if (hintText.includes('jacket')) clothingIcon = 'mdi:hanger';
+              else if (hintText.includes('Hoodie')) clothingIcon = 'mdi:hanger';
+              else if (hintText.includes('Raincoat')) clothingIcon = 'mdi:umbrella';
+
+              return `
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',Roboto,sans-serif;">
+                  <div style="display:flex;align-items:center;justify-content:center;">
+                    <ha-icon icon="${icon}" style="opacity:0.38;color:${APPLE.gray};width:66px;height:66px;margin-right:18px;"></ha-icon>
+                    <span style="font-size:92px;font-weight:700;line-height:0.9;color:${color};letter-spacing:-3px;">${temp}°</span>
+                  </div>
+                  <div style="background:rgba(245,245,247,0.92);border-radius:12px;padding:10px 20px;display:flex;align-items:center;margin-top:16px;">
+                    <ha-icon icon="${clothingIcon}" style="color:rgba(17,24,39,0.45);width:20px;height:20px;margin-right:10px;"></ha-icon>
+                    <span style="color:rgba(17,24,39,0.65);font-weight:600;font-size:16px;">${hintText}</span>
+                  </div>
+                </div>
+              `;
+            ]]]
+
+      # ════════════════════════════════════════════════════════════════════════
+      # FORECAST
+      # ════════════════════════════════════════════════════════════════════════
+      - type: custom:button-card
+        view_layout:
+          grid-area: forecast
+          place-self: stretch
+        entity: weather.forecast_home
+        show_icon: false
+        show_name: false
+        tap_action:
+          action: none
+        triggers_update:
+          - weather.forecast_home
+        card_mod: *card_mod_fill
+        styles:
+          card: *card_style
+          grid:
+            - grid-template-areas: '"content"'
+            - min-width: 0
+        custom_fields:
+          content: |
+            [[[
+              const w = entity;
+              const font = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', Roboto, sans-serif";
+              const APPLE = { red:'#FF383C', orange:'#FF8D28', yellow:'#FFCC00', green:'#34C759', mint:'#00C8B3', blue:'#0088FF', gray:'#8E8E93', text:'#111827' };
+
+              if (!w) return `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:rgba(17,24,39,0.45);">Weather unavailable</div>`;
+
+              const tempColor = (t) => {
+                if (t < 32) return APPLE.blue; if (t <= 50) return APPLE.mint;
+                if (t <= 68) return APPLE.green; if (t <= 80) return APPLE.yellow;
+                if (t <= 94) return APPLE.orange; return APPLE.red;
+              };
+
+              const labelMap = { 'sunny':'Sunny', 'clear-night':'Clear', 'partlycloudy':'Partly cloudy', 'cloudy':'Cloudy', 'rainy':'Rain', 'pouring':'Heavy rain', 'lightning-rainy':'Storms', 'snowy':'Snow', 'fog':'Fog' };
+              const iconMap = { 'sunny':'mdi:weather-sunny', 'clear-night':'mdi:weather-night', 'partlycloudy':'mdi:weather-partly-cloudy', 'cloudy':'mdi:weather-cloudy', 'rainy':'mdi:weather-rainy', 'pouring':'mdi:weather-pouring', 'lightning-rainy':'mdi:weather-lightning-rainy', 'snowy':'mdi:weather-snowy', 'fog':'mdi:weather-fog' };
+
+              const cond = w.state || 'cloudy';
+              const label = labelMap[cond] || 'Weather';
+              const icon = iconMap[cond] || 'mdi:weather-cloudy';
+
+              const forecast = w.attributes?.forecast || [];
+              const today = forecast[0] || {};
+              const hi = Math.round(today.temperature || w.attributes?.temperature || 0);
+              const pop = Math.round(today.precipitation_probability || 0);
+              const hiColor = tempColor(hi);
+
+              const expectSnow = hi <= 32;
+              const precipTitle = expectSnow ? "Will it snow today?" : "Will it rain today?";
+              let rainText = "No.";
+              if (pop >= 70) rainText = "Yes, likely.";
+              else if (pop >= 40) rainText = "Maybe.";
+              else if (pop >= 20) rainText = "Small chance.";
+
+              return `
+                <div style="height:100%;width:100%;display:flex;flex-direction:column;justify-content:space-between;gap:14px;font-family:${font};min-width:0;">
+                  <div style="display:grid;grid-template-columns:62px 1fr auto;grid-template-rows:min-content min-content;column-gap:10px;row-gap:10px;align-items:center;">
+                    <div style="grid-column:1;grid-row:1;font-size:12px;font-weight:900;letter-spacing:0.18em;text-transform:uppercase;color:rgba(17,24,39,0.30);">Forecast today</div>
+                    <div style="grid-column:3;grid-row:1;font-size:11px;font-weight:900;letter-spacing:0.11em;text-transform:uppercase;color:rgba(17,24,39,0.24);">HIGH</div>
+                    <div style="grid-column:1;grid-row:2;width:62px;height:62px;border-radius:22px;background:rgba(245,245,247,0.92);display:flex;align-items:center;justify-content:center;"><ha-icon icon="${icon}" style="width:34px;height:34px;color:rgba(17,24,39,0.40);"></ha-icon></div>
+                    <div style="grid-column:2;grid-row:2;font-size:20px;font-weight:800;color:#111827;">${label}</div>
+                    <div style="grid-column:3;grid-row:2;font-size:56px;font-weight:950;letter-spacing:-0.05em;line-height:1;color:${hiColor};">${hi}°</div>
+                  </div>
+                  <div style="border-radius:18px;background:rgba(245,245,247,0.92);padding:12px;display:flex;flex-direction:column;gap:6px;">
+                    <div style="font-size:11px;font-weight:900;letter-spacing:0.18em;text-transform:uppercase;color:rgba(17,24,39,0.32);padding-left:8px;">${precipTitle}</div>
+                    <div style="display:flex;align-items:baseline;gap:10px;padding-left:8px;">
+                      <div style="font-size:34px;font-weight:950;color:${APPLE.blue};">${pop}%</div>
+                      <div style="font-size:13px;font-weight:850;color:rgba(17,24,39,0.55);">${rainText}</div>
+                    </div>
+                    <div style="padding:0 8px;"><div style="height:7px;border-radius:999px;background:rgba(17,24,39,0.08);overflow:hidden;"><div style="height:100%;width:${pop}%;background:${APPLE.blue};opacity:0.55;border-radius:999px;"></div></div></div>
+                  </div>
+                </div>
+              `;
+            ]]]
+
+      # ════════════════════════════════════════════════════════════════════════
+      # NEXT UP / BUS TIMER
+      # ════════════════════════════════════════════════════════════════════════
+      - type: custom:button-card
+        view_layout:
+          grid-area: next
+          place-self: stretch
+        entity: sensor.wallboard_next_event
+        triggers_update:
+          - sensor.wallboard_next_event
+          - sensor.wallboard_bus_countdown
+          - sensor.wallboard_starts_in
+          - binary_sensor.wallboard_bus_timer_active
+          - binary_sensor.wallboard_school_day
+        show_icon: false
+        show_name: false
+        tap_action:
+          action: none
+        card_mod: *card_mod_fill
+        styles:
+          card: *card_style
+          grid:
+            - grid-template-areas: '"content"'
+        custom_fields:
+          content: |
+            [[[
+              try {
+                const schoolDay = states['binary_sensor.wallboard_school_day']?.state === 'on';
+                const busActive = states['binary_sensor.wallboard_bus_timer_active']?.state === 'on';
+                const APPLE = { red:'#FF383C', orange:'#FF8D28', green:'#34C759', mint:'#00C8B3', blue:'#0088FF' };
+                const font = "-apple-system,BlinkMacSystemFont,'SF Pro Display',Roboto,sans-serif";
+
+                // BUS TIMER MODE
+                if (schoolDay && busActive) {
+                  const bus = states['sensor.wallboard_bus_countdown'];
+                  const remain = parseInt(bus?.state, 10) || 0;
+                  if (bus?.state !== 'idle') {
+                    const showNow = remain <= 0;
+                    const mm = Math.floor(Math.max(remain,0)/60);
+                    const ss = String(Math.max(remain,0)%60).padStart(2,'0');
+                    const accent = remain <= 180 ? APPLE.red : (remain <= 600 ? APPLE.orange : APPLE.mint);
+                    const secHtml = showNow ? '' : `<span style="font-size:104px;font-weight:900;color:${accent};opacity:0.95;">:${ss}</span>`;
+                    const unitHtml = showNow ? '' : `<span style="font-size:28px;font-weight:900;color:${accent};margin-left:8px;">MIN</span>`;
+                    return `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:${font};text-align:center;"><div style="display:flex;align-items:center;gap:10px;font-size:12px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:rgba(17,24,39,0.22);"><span style="width:7px;height:7px;border-radius:999px;background:${accent};opacity:0.65;"></span>Bus pickup</div><div style="font-size:26px;font-weight:800;color:rgba(17,24,39,0.58);line-height:1;">${bus.attributes.bus_time_str||'--:--'}</div><div style="display:flex;align-items:baseline;justify-content:center;line-height:1;"><span style="font-size:104px;font-weight:900;letter-spacing:-2px;color:${accent};">${showNow?'NOW':mm}</span>${secHtml}${unitHtml}</div><div style="font-size:18px;font-weight:800;color:rgba(17,24,39,0.58);">${showNow?'Go outside now':'until the bus'}</div></div>`;
+                  }
+                }
+
+                // NEXT EVENT MODE
+                const title = (entity?.state || '').trim();
+                const startTs = entity?.attributes?.start_ts;
+                if (!startTs || title === 'No upcoming events') {
+                  return `<div style="text-align:center;font-family:${font};color:rgba(17,24,39,0.3);">Nothing scheduled</div>`;
+                }
+                const start = new Date(Number(startTs) * 1000);
+                const startsIn = states['sensor.wallboard_starts_in']?.state || '—';
+                const diffMin = Number(states['sensor.wallboard_starts_in']?.attributes?.diff_min) || 9999;
+                const color = (startsIn === 'NOW' || diffMin <= 60) ? APPLE.red : APPLE.blue;
+
+                return `<div style="width:100%;text-align:center;font-family:${font};"><div style="font-size:12px;font-weight:800;color:rgba(17,24,39,0.22);text-transform:uppercase;">Next up</div><div style="font-size:30px;font-weight:850;color:rgba(17,24,39,0.62);margin:4px 0;">${start.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true})}</div><div style="font-size:22px;font-weight:800;color:#111827;margin-bottom:12px;line-height:1.15;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;">${title}</div><div style="background:rgba(245,245,247,0.92);border-radius:16px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:12px;font-weight:800;color:rgba(17,24,39,0.34);">STARTS IN</span><span style="font-size:20px;font-weight:900;color:${color};">${startsIn}</span></div></div>`;
+              } catch(e) { return `<div style="color:red;">Error: ${e.message}</div>`; }
+            ]]]
+
+      # ════════════════════════════════════════════════════════════════════════
+      # SCHOOL LUNCH
+      # ════════════════════════════════════════════════════════════════════════
+      - type: custom:button-card
+        view_layout:
+          grid-area: lunch
+          place-self: stretch
+        show_icon: false
+        show_name: false
+        tap_action:
+          action: none
+        triggers_update:
+          - sensor.wallboard_school_1_lunch
+          - sensor.wallboard_school_2_lunch
+        card_mod: *card_mod_fill
+        styles:
+          card:
+            - width: 100%
+            - height: 100%
+            - padding: 12px
+            - background-color: '#FFFFFF'
+            - border-radius: 24px
+            - border: none
+            - box-shadow: 0px 2px 12px rgba(0,0,0,0.02)
+          grid:
+            - grid-template-areas: '"content"'
+            - align-items: stretch
+        custom_fields:
+          content: |
+            [[[
+              const s1 = states['sensor.wallboard_school_1_lunch']?.state ?? '—';
+              const s2 = states['sensor.wallboard_school_2_lunch']?.state ?? '—';
+              const fmt = (s) => (!s || s === 'unknown' || s === 'unavailable') ? '—' : s.trim();
+              const safe = (s) => String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+              const font = `-apple-system,BlinkMacSystemFont,"SF Pro Display",Roboto,sans-serif`;
+
+              // School config from customize (or defaults)
+              const schools = [
+                { accent:'#0A84FF', logo:'/local/school_1_logo.png', name:'School 1', meal:s1 },
+                { accent:'#FF3B30', logo:'/local/school_2_logo.png', name:'School 2', meal:s2 }
+              ];
+
+              const pill = (s) => `<div style="position:relative;background:rgba(245,245,247,0.92);border-radius:18px;padding:12px;display:flex;align-items:center;gap:10px;height:100%;width:100%;box-sizing:border-box;font-family:${font};"><div style="width:3px;height:52px;border-radius:999px;background:${s.accent};opacity:0.25;"></div><div style="width:36px;height:36px;border-radius:12px;background:#FFFFFF;border:1px solid rgba(17,24,39,0.06);display:flex;align-items:center;justify-content:center;margin-left:6px;"><img src="${s.logo}" style="width:20px;height:20px;object-fit:contain;"/></div><div style="flex:1;display:flex;flex-direction:column;gap:3px;min-width:0;"><div style="font-size:10px;font-weight:900;letter-spacing:0.14em;text-transform:uppercase;color:rgba(17,24,39,0.30);line-height:1;">${safe(s.name)}</div><div style="font-size:15px;font-weight:700;color:#111827;line-height:1.15;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;">${safe(fmt(s.meal))}</div></div></div>`;
+
+              return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;height:100%;">${schools.map(pill).join('')}</div>`;
+            ]]]
+
+      # ════════════════════════════════════════════════════════════════════════
+      # DINNER TONIGHT
+      # ════════════════════════════════════════════════════════════════════════
+      - type: custom:button-card
+        view_layout:
+          grid-area: dinner
+          place-self: stretch
+        entity: calendar.meals
+        show_icon: false
+        show_name: false
+        tap_action:
+          action: none
+        card_mod:
+          style: |
+            :host { width: 100% !important; height: 100% !important; display: block !important; }
+            ha-card { width: 100% !important; height: 100% !important; border-radius: 24px !important; overflow: hidden !important; }
+        styles:
+          card:
+            - width: 100%
+            - height: 100%
+            - padding: 0
+            - background-color: '#FFFFFF'
+            - border: none
+            - box-shadow: 0px 3px 16px rgba(0,0,0,0.02)
+          grid:
+            - grid-template-areas: '"content"'
+        custom_fields:
+          content: |
+            [[[
+              const font = `-apple-system,BlinkMacSystemFont,"SF Pro Display",Roboto,sans-serif`;
+              const safe = (s) => String(s??'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+              const cal = entity;
+              if (!cal || cal.state === 'unavailable') {
+                return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:${font};color:rgba(17,24,39,0.45);">Dinner unavailable</div>`;
+              }
+              const titleRaw = (cal.attributes?.message || cal.attributes?.summary || '').trim();
+              const title = safe(titleRaw);
+              const startStr = cal.attributes?.start_time;
+              const desc = String(cal.attributes?.description || '');
+              const now = new Date();
+              let isToday = false;
+              if (startStr) { const start = new Date(startStr); isToday = start.toDateString() === now.toDateString(); }
+              const urlMatch = desc.match(/https?:\/\/[^\s<>"']+/);
+              let imgUrl = (isToday && urlMatch) ? urlMatch[0].trim().replace(/[)\].,;!?]+$/g,'') : '';
+              const hasDinner = !!(isToday && titleRaw);
+              const label = hasDinner ? 'Dinner Tonight' : 'Dinner';
+              const rightBg = (hasDinner && imgUrl) ? `background-image:url('${imgUrl}');background-size:cover;background-position:center;` : `background:linear-gradient(135deg,rgba(17,24,39,0.06),rgba(17,24,39,0.02));`;
+
+              return `<div style="width:100%;height:100%;display:flex;overflow:hidden;background:#FFFFFF;font-family:${font};"><div style="flex:0 0 42%;height:100%;padding:20px 0 16px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;"><div style="font-size:12px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:rgba(17,24,39,0.45);">${label}</div>${hasDinner?`<div style="font-size:28px;font-weight:850;color:#0D1117;letter-spacing:-0.03em;line-height:1.06;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;">${title}</div>`:`<div style="font-size:16px;font-weight:600;color:rgba(17,24,39,0.55);">No dinner posted yet</div>`}</div><div style="flex:1;height:100%;position:relative;overflow:hidden;"><div style="position:absolute;inset:0;${rightBg}"></div><div style="position:absolute;left:0;top:0;bottom:0;width:200px;background:linear-gradient(to right,#FFFFFF 0%,rgba(255,255,255,0.85) 20%,rgba(255,255,255,0) 100%);"></div></div></div>`;
+            ]]]
+
+      # ════════════════════════════════════════════════════════════════════════
+      # COUNTDOWN EVENTS
+      # ════════════════════════════════════════════════════════════════════════
+      - type: custom:button-card
+        view_layout:
+          grid-area: countdown
+          place-self: stretch
+        entity: sensor.wallboard_countdown_events
+        show_icon: false
+        show_name: false
+        tap_action:
+          action: none
+        triggers_update:
+          - sensor.wallboard_countdown_events
+        card_mod: *card_mod_fill
+        styles:
+          card:
+            - width: 100%
+            - height: 100%
+            - background-color: '#FFFFFF'
+            - border-radius: 24px
+            - box-shadow: 0px 2px 12px rgba(0,0,0,0.02)
+            - border: none
+            - padding: 0
+          grid:
+            - grid-template-areas: '"content"'
+        custom_fields:
+          content: |
+            [[[
+              // Read events from sensor attribute
+              const eventsRaw = entity?.attributes?.events || [];
+              const events = Array.isArray(eventsRaw) ? eventsRaw : [];
+
+              const toUTC = (d) => Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+              const daysBetween = (a, b) => Math.round((b - a) / 86400000);
+
+              const now = new Date(); now.setHours(0,0,0,0);
+              const yearNow = now.getFullYear();
+              const nowUTC = toUTC(now);
+
+              const normYear = (y) => {
+                if (!y) return yearNow;
+                const n = Number(y);
+                if (!isFinite(n)) return yearNow;
+                return String(y).length === 2 ? 2000 + n : n;
+              };
+
+              const parsed = events.map(e => {
+                const parts = String(e.date).split("/");
+                const m = Number(parts[0]);
+                const d = Number(parts[1]);
+                const y = normYear(parts[2]);
+                let dt = new Date(y, m - 1, d); dt.setHours(0,0,0,0);
+                let dtUTC = toUTC(dt);
+                if (parts.length < 3 && dtUTC < nowUTC) { dt.setFullYear(dt.getFullYear() + 1); dtUTC = toUTC(dt); }
+                return { ...e, dt, days: daysBetween(nowUTC, dtUTC) };
+              });
+
+              const future = parsed.filter(e => e.days >= 0).sort((a,b) => a.dt - b.dt).slice(0, 4);
+
+              const pill = (e, i) => {
+                const hero = i === 0;
+                let num = String(e.days);
+                let sub = "Days";
+                if (e.days === 0) { num = "0"; sub = "Today"; }
+                else if (e.days === 1) { num = "1"; sub = "Tomorrow"; }
+                const dateStr = e.dt.toLocaleDateString('en-US', { month:'short', day:'numeric', weekday: hero ? 'short' : undefined });
+                return `<div style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:${hero?'14px':'10px 12px'};border-radius:16px;background:${hero?'#FFFFFF':'rgba(245,245,247,0.92)'};box-shadow:${hero?'0 4px 10px rgba(0,0,0,0.04)':'none'};border:${hero?'1px solid rgba(17,24,39,0.06)':'none'};"><div style="width:46px;height:46px;border-radius:16px;background:${hero?'rgba(10,132,255,0.10)':'rgba(17,24,39,0.06)'};display:flex;align-items:center;justify-content:center;"><ha-icon icon="${e.icon}" style="width:24px;height:24px;color:${hero?'#0A84FF':'rgba(17,24,39,0.55)'};"></ha-icon></div><div style="flex:1;min-width:0;"><div style="font-weight:${hero?'800':'700'};font-size:${hero?'18px':'15px'};color:${hero?'#111827':'rgba(17,24,39,0.85)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.title}</div><div style="font-size:12px;font-weight:500;color:rgba(17,24,39,0.50);margin-top:2px;">${dateStr}</div></div><div style="text-align:right;min-width:60px;"><div style="font-size:${hero?'34px':'28px'};font-weight:900;letter-spacing:-0.02em;line-height:1;color:#1F2937;">${num}</div><div style="font-size:11px;text-transform:uppercase;font-weight:800;letter-spacing:0.10em;color:rgba(17,24,39,0.40);margin-top:4px;">${sub}</div></div></div>`;
+              };
+
+              return `<div style="width:100%;height:100%;padding:16px 24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;">${future.map((e,i)=>pill(e,i)).join('')}</div>`;
+            ]]]
+
+      # ════════════════════════════════════════════════════════════════════════
+      # DAILY FUN (Thought, Joke, Fact)
+      # ════════════════════════════════════════════════════════════════════════
+      - type: custom:button-card
+        view_layout:
+          grid-area: fun
+          place-self: stretch
+        show_icon: false
+        show_name: false
+        tap_action:
+          action: none
+        triggers_update:
+          - input_text.wallboard_daily_thought
+          - input_text.wallboard_daily_joke
+          - input_text.wallboard_daily_fact
+        card_mod: *card_mod_fill
+        styles:
+          card:
+            - height: 100%
+            - width: 100%
+            - padding: 16px 24px
+            - background-color: '#FFFFFF'
+            - border-radius: 24px
+            - border: none
+            - box-shadow: 0px 2px 12px rgba(0,0,0,0.02)
+          grid:
+            - grid-template-areas: '"content"'
+        custom_fields:
+          content: |
+            [[[
+              const clean = (v) => {
+                let s = (v ?? '').toString();
+                if (!s || s === 'unknown' || s === 'unavailable') return '';
+                return s.replace(/&amp;/g,'&').replace(/&#\d+;/g,'').replace(/^[\s·•:.\-]+/g,'').trim();
+              };
+              const RED = '#FF3B30', GREEN = '#34C759', BLUE = '#0A84FF';
+              const tint = (c) => c === RED ? 'rgba(255,59,48,0.14)' : c === GREEN ? 'rgba(52,199,89,0.14)' : 'rgba(10,132,255,0.14)';
+
+              const thought = clean(states['input_text.wallboard_daily_thought']?.state);
+              const joke = clean(states['input_text.wallboard_daily_joke']?.state);
+              const fact = clean(states['input_text.wallboard_daily_fact']?.state);
+
+              const body = (t) => t ? `<div style="font-size:13px;font-weight:500;color:#111827;line-height:1.35;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;">${t}</div>` : `<div style="color:rgba(17,24,39,0.40);">—</div>`;
+
+              const row = (icon, label, color, text) => `<div style="background:rgba(245,245,247,0.92);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:7px;"><div style="display:flex;align-items:center;gap:9px;"><div style="width:32px;height:32px;border-radius:11px;background:${tint(color)};border:1px solid rgba(17,24,39,0.06);display:flex;align-items:center;justify-content:center;"><ha-icon icon="${icon}" style="color:${color};width:17px;height:17px;"></ha-icon></div><div style="font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:rgba(17,24,39,0.38);">${label}</div></div>${body(text)}</div>`;
+
+              return `<div style="height:100%;width:100%;display:flex;flex-direction:column;justify-content:space-between;gap:12px;">${row('mdi:lightbulb-outline','Thought',RED,thought)}${row('mdi:emoticon-outline','Joke',GREEN,joke)}${row('mdi:head-lightbulb-outline','Fact',BLUE,fact)}</div>`;
+            ]]]
+
+      # ════════════════════════════════════════════════════════════════════════
+      # WEATHER RADAR
+      # ════════════════════════════════════════════════════════════════════════
+      - type: custom:weather-radar-card
+        view_layout:
+          grid-area: radar
+          place-self: stretch
+        zoom_level: 7
+        show_marker: true
+        map_style: Light
+        # ╔═════════════════════════════════════════════════════════════════════╗
+        # ║ ⚠ EDIT HERE: Replace 40.71 with your Latitude                       ║
+        # ╚═════════════════════════════════════════════════════════════════════╝
+        center_latitude: 40.71
+        marker_latitude: 40.71
+        card_mod:
+          style: |
+            :host { display: block !important; width: 100% !important; height: 100% !important; }
+            ha-card {
+              width: 100% !important; height: 100% !important;
+              background: #FFFFFF !important; border: none !important;
+              border-radius: 24px !important; box-shadow: 0px 2px 12px rgba(0,0,0,0.02) !important;
+              overflow: hidden !important; padding: 0 !important;
+              filter: saturate(0.85) contrast(0.95) !important; opacity: 0.92 !important;
+            }
+
+      # ════════════════════════════════════════════════════════════════════════
+      # WEEKLY FORECAST
+      # ════════════════════════════════════════════════════════════════════════
+      - type: weather-forecast
+        entity: weather.forecast_home
+        forecast_type: daily
+        show_current: false
+        show_forecast: true
+        secondary_info_attribute: wind_speed
+        view_layout:
+          grid-area: weekly
+          place-self: stretch
+        card_mod:
+          style: |
+            ha-card {
+              background: #FFFFFF !important; border-radius: 24px !important; border: none !important;
+              box-shadow: 0px 4px 20px rgba(0,0,0,0.03) !important; padding: 24px !important;
+              height: 100% !important; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Roboto, sans-serif !important;
+            }
+            ha-card::before {
+              content: "THIS WEEK"; display: block;
+              font-size: 12px !important; font-weight: 900 !important; letter-spacing: 0.18em !important;
+              text-transform: uppercase !important; color: rgba(17,24,39,0.30) !important; margin-bottom: 16px !important;
+            }
+            .forecast { padding: 0 !important; display: flex !important; gap: 10px !important; }
+            .forecast > div {
+              flex: 1 !important; background: rgba(245,245,247,0.92) !important; border-radius: 16px !important;
+              padding: 14px 10px !important; display: flex !important; flex-direction: column !important;
+              align-items: center !important; gap: 10px !important;
+            }
+            .forecast .day { font-size: 12px !important; font-weight: 800 !important; letter-spacing: 0.12em !important; color: rgba(17,24,39,0.40) !important; text-transform: uppercase !important; }
+            .forecast ha-icon, .forecast ha-svg-icon { width: 38px !important; height: 38px !important; color: rgba(17,24,39,0.55) !important; }
+            .forecast .temp { font-size: 24px !important; font-weight: 800 !important; color: #111827 !important; }
+            .forecast .templow { font-size: 17px !important; font-weight: 700 !important; color: rgba(17,24,39,0.35) !important; }
+
+      # ════════════════════════════════════════════════════════════════════════
+      # FAMILY CALENDAR
+      # ════════════════════════════════════════════════════════════════════════
+      - type: custom:week-planner-card
+        view_layout:
+          grid-area: family
+          place-self: stretch
+        compact: false
+        days: '1'
+        startDaysAhead: 0
+        startingDay: today
+        hidePastEvents: true
+        timeFormat: h:mm a
+        updateInterval: 60
+        maxDayEvents: 6
+        # ╔═════════════════════════════════════════════════════════════════════╗
+        # ║ ⚠ EDIT HERE: Replace calendar entities with your own                ║
+        # ╚═════════════════════════════════════════════════════════════════════╝
+        calendars:
+          - entity: calendar.family
+            color: '#6B7280'
+          - entity: calendar.person_1
+            color: '#0A84FF'
+          - entity: calendar.person_2
+            color: '#34C759'
+          - entity: calendar.person_3
+            color: '#FF9F0A'
+          - entity: calendar.holidays
+            color: '#AF52DE'
+        card_mod:
+          style:
+            .: |
+              :host { height: 100% !important; width: 100% !important; display: block !important; }
+              ha-card { height: 100% !important; width: 100% !important; }
+            ha-card$: |
+              :host, * { outline: none !important; }
+              .card, .container, .wrapper, .content, .week, .week-container, .days, .days-container, .day, .day-container, .day-content, .events, .day-events {
+                border: 0 !important; box-shadow: none !important; outline: none !important; background: transparent !important;
+              }
+              .card-header { font-size: 20px !important; font-weight: 700 !important; color: #3A4451 !important; margin-bottom: 16px !important; }
+              .days { display: grid !important; grid-template-columns: 1fr !important; }
+              .events, .day-events { display: flex !important; flex-direction: column !important; }
+              .event {
+                position: relative; border: 0 !important; border-radius: 16px !important;
+                padding: 16px 16px 16px 32px !important; margin: 0 0 12px 0 !important;
+                background: rgba(245,245,247,0.92) !important;
+              }
+              .event:last-child { margin-bottom: 0 !important; }
+              .event::before {
+                content: ""; position: absolute; left: 12px; top: 14px; bottom: 14px;
+                width: 14px; border-radius: 999px; background: var(--border-color); opacity: 1;
+              }
+              .event .title { font-weight: 800 !important; font-size: 18px !important; color: #111827 !important; }
+              .event .time { font-weight: 600 !important; font-size: 15px !important; color: rgba(17,24,39,0.55) !important; }
+            ha-card: >
+              border-radius: 24px !important; border: none !important; height: 100% !important;
+              background: #FFFFFF !important; box-shadow: 0px 3px 16px rgba(0,0,0,0.025) !important;
+              padding: 12px 24px !important;
+              .day-header, .date, .day-title { display: none !important; }
+
+      # ════════════════════════════════════════════════════════════════════════
+      # SPORTS TEAM 1
+      # ⚠ DO NOT DELETE THIS CARD (Even if unused, set show: false or hide it)
+      # It contains the anchor template (*team_card_template) used by other teams
+      # ════════════════════════════════════════════════════════════════════════
+      - type: custom:button-card
+        view_layout:
+          grid-area: team1
+          place-self: stretch
+        entity: sensor.team_tracker_1
+        show_icon: false
+        show_name: false
+        tap_action:
+          action: none
+        card_mod: *card_mod_fill
+        styles:
+          card: *card_style
+          grid:
+            - grid-template-areas: '"content"'
+        custom_fields:
+          content: &team_card_template |
+            [[[
+              const s = entity;
+              if (!s) return `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:rgba(17,24,39,0.45);">No team configured</div>`;
+
+              const a = s.attributes || {};
+              const mode = String(s.state || '').toUpperCase();
+
+              const safe = (v, fb='') => (v === undefined || v === null || v === 'None' || v === 'unknown') ? fb : String(v);
+
+              const toDate = (val) => {
+                const raw = safe(val, '');
+                if (!raw) return null;
+                const d = new Date(raw.includes('T') ? raw : raw.replace(' ', 'T'));
+                return isNaN(d) ? null : d;
+              };
+
+              const fmtDate = (d) => {
+                const today = new Date(); today.setHours(0,0,0,0);
+                const game = new Date(d); game.setHours(0,0,0,0);
+                const diff = Math.round((game - today) / 86400000);
+                if (diff === -1) return 'YESTERDAY';
+                if (diff === 0) return 'TODAY';
+                if (diff === 1) return 'TOMORROW';
+                return d.toLocaleDateString([], { weekday:'short', month:'short', day:'2-digit' }).toUpperCase();
+              };
+
+              const fmtTime = (d) => d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true }).toUpperCase();
+
+              const team = { name: safe(a.team_name, safe(a.team_abbr, 'Team')), record: safe(a.team_record), logo: safe(a.team_logo), homeaway: safe(a.team_homeaway), score: safe(a.team_score) };
+              const opp = { name: safe(a.opponent_name, safe(a.opponent_abbr, 'Opponent')), record: safe(a.opponent_record), logo: safe(a.opponent_logo), homeaway: safe(a.opponent_homeaway), score: safe(a.opponent_score) };
+
+              let left = opp, right = team;
+              if (team.homeaway === 'away') { left = team; right = opp; }
+
+              const gameDate = toDate(a.date);
+              const dateLine = gameDate ? fmtDate(gameDate) : '';
+              const timeLine = gameDate ? fmtTime(gameDate) : '';
+              const odds = safe(a.odds), ou = safe(a.overunder);
+              const bottomLine = [odds, ou].filter(Boolean).join(' • ');
+              const quarter = safe(a.quarter), clock = safe(a.clock);
+              const inLine = [quarter, clock].filter(Boolean).join(' • ');
+              const statusText = mode === 'POST' ? 'Final' : mode === 'IN' ? (inLine || 'Live') : timeLine;
+
+              if (mode === 'NOT_FOUND' || mode === 'BYE') {
+                return `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:rgba(17,24,39,0.45);font-size:18px;font-weight:600;">No game found</div>`;
+              }
+
+              const wrap = `width:100%;height:100%;display:grid;grid-template-columns:1fr 1.8fr 1fr;align-items:center;column-gap:18px;`;
+              const col = `display:flex;flex-direction:column;align-items:center;gap:8px;`;
+              const logoBox = `width:60px;height:60px;border-radius:16px;background:rgba(245,245,247,0.92);display:flex;align-items:center;justify-content:center;padding:6px;box-sizing:border-box;`;
+              const logoImg = `width:100%;height:100%;object-fit:contain;`;
+              const nameStyle = `font-size:15px;font-weight:600;color:#111827;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;`;
+              const recStyle = `font-size:13px;font-weight:600;color:rgba(17,24,39,0.45);`;
+              const center = `display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;`;
+              const topStyle = `font-size:11px;font-weight:900;letter-spacing:0.16em;text-transform:uppercase;color:rgba(17,24,39,0.35);`;
+              const mainStyle = `font-size:28px;font-weight:800;letter-spacing:-0.02em;color:#111827;`;
+              const botStyle = `font-size:15px;font-weight:700;color:rgba(17,24,39,0.40);`;
+              const scoreRow = `display:flex;align-items:baseline;justify-content:center;gap:16px;`;
+              const scoreBig = `font-size:54px;font-weight:800;letter-spacing:-0.04em;color:#111827;`;
+              const dash = `font-size:20px;font-weight:800;color:rgba(17,24,39,0.30);`;
+
+              if (mode === 'PRE') {
+                return `<div style="${wrap}"><div style="${col}"><div style="${logoBox}">${left.logo?`<img src="${left.logo}" style="${logoImg}">`:''}</div><div style="${nameStyle}">${left.name}</div><div style="${recStyle}">${left.record}</div></div><div style="${center}"><div style="${topStyle}">${dateLine}</div><div style="${mainStyle}">${statusText}</div><div style="${botStyle}">${bottomLine}</div></div><div style="${col}"><div style="${logoBox}">${right.logo?`<img src="${right.logo}" style="${logoImg}">`:''}</div><div style="${nameStyle}">${right.name}</div><div style="${recStyle}">${right.record}</div></div></div>`;
+              }
+
+              const lScore = safe(left.score, '0'), rScore = safe(right.score, '0');
+              return `<div style="${wrap}"><div style="${col}"><div style="${logoBox}">${left.logo?`<img src="${left.logo}" style="${logoImg}">`:''}</div><div style="${nameStyle}">${left.name}</div></div><div style="${center}"><div style="${topStyle}">${dateLine}</div><div style="${scoreRow}"><span style="${scoreBig}">${lScore}</span><span style="${dash}">–</span><span style="${scoreBig}">${rScore}</span></div><div style="font-size:13px;font-weight:700;color:rgba(17,24,39,0.45);">${statusText}</div></div><div style="${col}"><div style="${logoBox}">${right.logo?`<img src="${right.logo}" style="${logoImg}">`:''}</div><div style="${nameStyle}">${right.name}</div></div></div>`;
+            ]]]
+
+      # ════════════════════════════════════════════════════════════════════════
+      # SPORTS TEAM 2
+      # ════════════════════════════════════════════════════════════════════════
+      - type: custom:button-card
+        view_layout:
+          grid-area: team2
+          place-self: stretch
+        entity: sensor.team_tracker_2
+        show_icon: false
+        show_name: false
+        tap_action:
+          action: none
+        card_mod: *card_mod_fill
+        styles:
+          card: *card_style
+          grid:
+            - grid-template-areas: '"content"'
+        custom_fields:
+          content: *team_card_template
+
+      # ════════════════════════════════════════════════════════════════════════
+      # SPORTS TEAM 3
+      # ════════════════════════════════════════════════════════════════════════
+      - type: custom:button-card
+        view_layout:
+          grid-area: team3
+          place-self: stretch
+        entity: sensor.team_tracker_3
+        show_icon: false
+        show_name: false
+        tap_action:
+          action: none
+        card_mod: *card_mod_fill
+        styles:
+          card: *card_style
+          grid:
+            - grid-template-areas: '"content"'
+        custom_fields:
+          content: *team_card_template
+
+      # ════════════════════════════════════════════════════════════════════════
+      # SPORTS TEAM 4
+      # ════════════════════════════════════════════════════════════════════════
+      - type: custom:button-card
+        view_layout:
+          grid-area: team4
+          place-self: stretch
+        entity: sensor.team_tracker_4
+        show_icon: false
+        show_name: false
+        tap_action:
+          action: none
+        card_mod: *card_mod_fill
+        styles:
+          card: *card_style
+          grid:
+            - grid-template-areas: '"content"'
+        custom_fields:
+          content: *team_card_template
+```
