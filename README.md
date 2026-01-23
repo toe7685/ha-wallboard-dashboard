@@ -22,7 +22,7 @@ A beautiful, family-friendly kiosk dashboard for Home Assistant featuring weathe
 - **Sports Tracker** — Live scores for up to 4 teams
 - **Daily Fun** — Thought of the day, jokes, and fun facts
 
-## 📋 Requirements
+## 📋 Prerequisites
 
 ### Home Assistant
 - Home Assistant 2024.1.0 or newer
@@ -54,6 +54,9 @@ A beautiful, family-friendly kiosk dashboard for Home Assistant featuring weathe
 5. **Add the dashboard**
 
 📖 **Full installation guide:** [INSTALL.md](INSTALL.md)
+
+## ☕️ Tip Jar
+If this dashboard saved you time, you can buy me a coffee: https://ko-fi.com/musicjock
 
 ## 📁 Repository Structure
 
@@ -138,9 +141,6 @@ This project is licensed under the MIT License — see [LICENSE](LICENSE) for de
 
 ## 🔒 Security
 If you believe you found sensitive info in this repo (tokens, URLs, personal data), please open a Bug report issue and do NOT post the secret value. I will remove it quickly.
-
-## ☕️ Tip Jar
-If this dashboard saved you time, you can buy me a coffee: https://ko-fi.com/musicjock
 
 ---
 
