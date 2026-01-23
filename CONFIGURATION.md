@@ -25,6 +25,8 @@ Configure everything in the files inside `/config/wallboard/` (especially `entit
 
 If you have an older version of this repo (or you heavily customized the dashboard), you may still see hardcoded values in the dashboard YAML. In that case, update to the latest version first and then re-check your configuration files.
 
+---
+
 ## entities.yaml
 
 This file maps your Home Assistant entities to the dashboard's internal sensors.
@@ -109,12 +111,12 @@ events:
   - title: "Valentine's Day"
     date: "2/14"                    # Month/Day format
     icon: "mdi:heart-outline"
-  
+
   # Specific year events (one-time)
   - title: "Spring Break"
     date: "4/4/2026"                # Month/Day/Year format
     icon: "mdi:beach"
-  
+
   # Birthdays
   - title: "Mom's Birthday"
     date: "6/15"
@@ -130,6 +132,7 @@ events:
 | `M/D/YYYY` | `3/25/2026` | Specific date (2026) |
 
 ### Available Icons
+
 Browse all icons at [Material Design Icons](https://materialdesignicons.com/)
 
 | Event Type | Icon |
@@ -241,18 +244,21 @@ school_1_menus:
 
 ## Disabling Features
 
-To disable features you don't need:
+This project is designed so you can disable data sources in `entities.yaml` without needing to edit the dashboard layout.
+
+Note: disabling a feature stops its data and logic, but the corresponding card may still appear (usually showing placeholders). If you want to remove a card entirely from the layout, follow **docs/CUSTOMIZATION.md**.
 
 ### Disable School Features
-1. In `entities.yaml`, set `calendar_school: none`.
-2. In the Dashboard YAML, delete the `lunch` grid area cards.
+1. In `entities.yaml`, set `school_features_enabled: false`.
+2. (Optional) Remove the lunch cards from the layout: see **docs/CUSTOMIZATION.md**.
 
 ### Disable Sports
 1. In `entities.yaml`, set `team_1` through `team_4` to `none`.
-2. In the Dashboard YAML, delete the team cards.
+2. (Optional) Remove the sports row from the layout: see **docs/CUSTOMIZATION.md**.
 
 ### Disable Meals Calendar
 1. In `entities.yaml`, set `calendar_meals: none`.
+2. (Optional) Remove the dinner card from the layout: see **docs/CUSTOMIZATION.md**.
 
 ---
 
@@ -279,4 +285,3 @@ To disable features you don't need:
 ## Next Steps
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) — Fix common issues
 - [docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md) — Advanced customization
-```
