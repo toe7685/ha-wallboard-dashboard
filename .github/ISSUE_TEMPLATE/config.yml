@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Read the install docs first
+    url: https://github.com/musicjock/ha-wallboard-dashboard/blob/main/INSTALL.md
+    about: Most setup issues are answered here.
+  - name: Troubleshooting
+    url: https://github.com/musicjock/ha-wallboard-dashboard/blob/main/TROUBLESHOOTING.md
+    about: Common errors and fixes.
