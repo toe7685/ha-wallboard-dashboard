@@ -2,7 +2,7 @@
 
 ## Dashboard Overview
 
-![Full Dashboard](../screenshots/preview.png)
+![Full Dashboard](docs/screenshots/preview.png)
 
 *Full dashboard view showing all cards*
 
