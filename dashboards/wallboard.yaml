@@ -1,12 +1,9 @@
-# ╔═══════════════════════════════════════════════════════════════════════════╗
-# ║                     FAMILY WALLBOARD DASHBOARD                             ║
-# ║                                                                            ║
-# ║  ⚠️ IMPORTANT EDITING INSTRUCTIONS:                                        ║
-# ║  1. Most logic is in packages/wallboard_package.yaml (Edit that first!)    ║
-# ║  2. In THIS file, you must perform a FIND & REPLACE for:                   ║
-# ║     - "40.71" -> Your actual Latitude                                      ║
-# ║     - "calendar.family" -> Your actual Calendar Entity IDs                 ║
-# ╚═══════════════════════════════════════════════════════════════════════════╝
+# Family Wallboard Dashboard
+#
+# Notes:
+# - Most logic lives in `packages/wallboard_package.yaml`.
+# - Radar location is based on `zone.home` (change your Home zone in HA if needed).
+# - Week Planner calendars are listed in this file (either rename your calendar entity_ids to match, or edit the list).
 
 views:
   - title: Wallboard
@@ -545,11 +542,10 @@ views:
         zoom_level: 7
         show_marker: true
         map_style: Light
-        # ╔═════════════════════════════════════════════════════════════════════╗
-        # ║ ⚠ EDIT HERE: Replace 40.71 with your Latitude                       ║
-        # ╚═════════════════════════════════════════════════════════════════════╝
-        center_latitude: 40.71
-        marker_latitude: 40.71
+        center_latitude: "zone.home"
+        center_longitude: "zone.home"
+        marker_latitude: "zone.home"
+        marker_longitude: "zone.home"
         card_mod:
           style: |
             :host { display: block !important; width: 100% !important; height: 100% !important; }
@@ -611,20 +607,19 @@ views:
         timeFormat: h:mm a
         updateInterval: 60
         maxDayEvents: 6
-        # ╔═════════════════════════════════════════════════════════════════════╗
-        # ║ ⚠ EDIT HERE: Replace calendar entities with your own                ║
-        # ╚═════════════════════════════════════════════════════════════════════╝
         calendars:
           - entity: calendar.family
             color: '#6B7280'
-          - entity: calendar.person_1
-            color: '#0A84FF'
-          - entity: calendar.person_2
-            color: '#34C759'
-          - entity: calendar.person_3
-            color: '#FF9F0A'
-          - entity: calendar.holidays
-            color: '#AF52DE'
+
+          # Optional additional calendars (uncomment and update entity IDs)
+          # - entity: calendar.person_1
+          #   color: '#0A84FF'
+          # - entity: calendar.person_2
+          #   color: '#34C759'
+          # - entity: calendar.person_3
+          #   color: '#FF9F0A'
+          # - entity: calendar.holidays
+          #   color: '#AF52DE'
         card_mod:
           style:
             .: |
