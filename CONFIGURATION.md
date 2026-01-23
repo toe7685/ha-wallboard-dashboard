@@ -17,14 +17,13 @@ All user configuration is in `/config/wallboard/`. These files control the data 
 
 ---
 
-## ⚠️ Important: Dashboard YAML Edits
-While most settings are in the files below, **two specific settings** must be edited directly in the dashboard code because Home Assistant cards do not support templates for these values.
+## Dashboard configuration model
 
-**You must edit your dashboard (Edit Dashboard → Raw Configuration Editor) to change:**
-1. **Weather Radar Location:** Search for `center_latitude: 40.71` and update it to your location.
-2. **Calendar Entities:** Search for `calendar.family` inside the `week-planner-card` section and update the entity IDs to match yours.
+This project is designed so you should **not** need to edit `dashboards/wallboard.yaml` during setup.
 
----
+Configure everything in the files inside `/config/wallboard/` (especially `entities.yaml`). The dashboard reads from those values.
+
+If you have an older version of this repo (or you heavily customized the dashboard), you may still see hardcoded values in the dashboard YAML. In that case, update to the latest version first and then re-check your configuration files.
 
 ## entities.yaml
 
