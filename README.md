@@ -107,6 +107,16 @@ Having issues? Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for:
 - Card rendering issues
 - Performance optimization
 
+## 👨‍💻 Support / Issues
+This repo is provided as-is. I’m happy to fix bugs in the repo and improve documentation.
+
+If you need help with your unique Home Assistant setup, please read:
+- INSTALL.md
+- CONFIGURATION.md
+- TROUBLESHOOTING.md
+
+Issues that don’t follow the templates may be closed.
+
 ## 📸 Screenshots
 
 See [docs/SCREENSHOTS.md](docs/SCREENSHOTS.md) for full dashboard screenshots.
@@ -125,6 +135,9 @@ This project is licensed under the MIT License — see [LICENSE](LICENSE) for de
 - Weather data from [Met.no](https://www.met.no/)
 - Daily fun facts from [Be A Great Teacher](https://www.beagreatteacher.com/)
 - Sports data via [Team Tracker](https://github.com/vasqued2/ha-teamtracker)
+
+## 🔒 Security
+If you believe you found sensitive info in this repo (tokens, URLs, personal data), please open a Bug report issue and do NOT post the secret value. I will remove it quickly.
 
 ## ☕️ Tip Jar
 If this dashboard saved you time, you can buy me a coffee: https://ko-fi.com/musicjock
