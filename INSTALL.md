@@ -126,8 +126,6 @@ frontend:
 
 ## Step 6: Add the Dashboard
 
-**⚠️ Critical Step:** You must perform a Find & Replace in this step.
-
 1. **Create Dashboard:**
    - Settings → Dashboards → Add Dashboard.
    - "New dashboard from scratch".
@@ -141,11 +139,9 @@ frontend:
    - Delete all existing code.
    - Paste the contents of `dashboards/wallboard.yaml`.
 
-3. **📝 MANDATORY EDITS (Before Saving):**
-   - **Find:** `40.71`
-   - **Replace with:** Your actual Latitude.
-   - **Find:** `calendar.family` (inside the `week-planner-card` section)
-   - **Replace with:** Your actual family calendar entity ID.
+3. **No manual edits required**
+   - All entity IDs and location settings are configured in `/config/wallboard/entities.yaml`.
+   - If the radar or week planner is wrong, fix it there (see [CONFIGURATION.md](CONFIGURATION.md)).
 
 4. Click **Save**.
 
@@ -163,9 +159,9 @@ Open your new Wallboard dashboard.
 | **Radar** | Should show your map location. |
 
 ### Common Issues
-*   **"Custom element doesn't exist":** You missed a card in Step 1.
-*   **Radar is wrong location:** You didn't edit the Latitude in Step 6.
-*   **Calendar shows errors:** You didn't update the entity IDs in Step 6.
+- **"Custom element doesn't exist":** You missed a card in Step 1 or didn’t restart HA after installing cards.
+- **Radar is wrong location:** Update the radar latitude/longitude in `/config/wallboard/entities.yaml`.
+- **Calendar shows errors:** Update the calendar entity IDs in `/config/wallboard/entities.yaml`.
 
 ---
 
@@ -184,4 +180,3 @@ For a wall-mounted tablet (Fire Tablet, iPad, etc.):
 ## 🎉 Done!
 
 Next, customize your family events and school info by editing the files in `/config/wallboard/`.
-```
