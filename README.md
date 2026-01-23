@@ -126,6 +126,9 @@ This project is licensed under the MIT License — see [LICENSE](LICENSE) for de
 - Daily fun facts from [Be A Great Teacher](https://www.beagreatteacher.com/)
 - Sports data via [Team Tracker](https://github.com/vasqued2/ha-teamtracker)
 
+## ☕️ Tip Jar
+If this dashboard saved you time, you can buy me a coffee: https://ko-fi.com/musicjock
+
 ---
 
 **Questions?** Open an issue, but please check [TROUBLESHOOTING.md](TROUBLESHOOTING.md) first!
