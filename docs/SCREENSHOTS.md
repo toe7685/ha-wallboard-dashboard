@@ -12,51 +12,32 @@
 
 ### Time & Weather Row
 
-![Time and Weather](screenshots/time-weather.png)
+![Time and Weather](screenshots/row1.png)
 
 - **Time Card:** Large clock with AM/PM, weekday, and date
 - **Current Weather:** Temperature with clothing recommendation
 - **Forecast:** High temp, precipitation probability, "Will it rain?" display
-- **Next Up:** Upcoming calendar event with countdown
+- **Bus Timer/Next Up:** Countdown to bus arrivial or upcoming calendar event with countdown
 
-### School Information Row
-
-![School Info](screenshots/school-lunch.png)
-
-- **Lunch Cards:** Today's menu for up to 2 schools
-- **Weekly Forecast:** 5-day weather outlook
 
 ### Main Content Row
 
-![Main Content](screenshots/main-content.png)
+![Main Content](screenshots/main.png)
 
+- **Lunch Cards:** Today's menu for up to 2 schools
 - **Dinner Tonight:** Meal name with food image from calendar
+- **Weekly Forecast:** 5-day weather outlook
+- **Family Calendar:** Color-coded events for today
+- **Daily Fun:** Thought, joke, and fact of the day
 - **Countdown:** Next 4 upcoming events with days remaining
 - **Radar:** Animated weather radar
-- **Family Calendar:** Color-coded events for today
 
-### Extras Row
 
-![Extras](screenshots/extras.png)
+### Sports Row
 
-- **Daily Fun:** Thought, joke, and fact of the day
+![Extras](screenshots/sports.png)
+
 - **Sports:** Live scores for up to 4 teams
-
----
-
-## Bus Timer
-
-![Bus Timer](screenshots/bus-timer.png)
-
-*The "Next Up" card transforms into a bus countdown on school mornings*
-
----
-
-## Kiosk Mode
-
-![Kiosk](screenshots/kiosk.png)
-
-*Dashboard running in kiosk mode on a wall-mounted tablet*
 
 ---
 
