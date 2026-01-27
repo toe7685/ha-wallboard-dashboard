@@ -79,16 +79,22 @@ Move the files from the download folder to your Home Assistant `/config/` direct
 │   └── wallboard_theme.yaml
 ├── packages/
 │   └── wallboard_package.yaml
-├── wallboard/               <-- Files copied from 'examples' folder
-│   ├── entities.yaml.example
-│   ├── events.yaml.example
-│   ├── school_calendar.yaml.example
-│   └── school_menus.yaml.example
+├── wallboard/               <-- Create this folder, copy files from 'examples/'
+│   ├── entities.yaml        <-- REQUIRED (rename from .example)
+│   ├── events.yaml          <-- REQUIRED (rename from .example)
+│   ├── school_calendar.yaml <-- Optional (rename from .example)
+│   └── school_menus.yaml    <-- Optional (rename from .example)
 ├── www/
 │   ├── school_1_logo.png
 │   └── school_2_logo.png
 └── dashboards/              <-- Optional: store dashboard YAML files here
 ```
+
+**Important:** The package loads configuration from `/config/wallboard/`. You MUST:
+1. Create the `/config/wallboard/` folder
+2. Copy example files from `examples/` into it
+3. Rename files to remove the `.example` suffix
+4. Restart Home Assistant after making changes
 
 ---
 
@@ -112,16 +118,25 @@ frontend:
 
 ---
 
-## Step 5: Configure Configuration Files
+## Step 5: Configure Your Settings
 
-1. Go to the `/config/wallboard/` folder.
-2. Rename the files to remove `.example`:
-   - `entities.yaml.example` → `entities.yaml`
-   - `events.yaml.example` → `events.yaml`
-   - (And the school files if you need them)
-3. Open `entities.yaml` and update the values to match your Home Assistant entities (weather, calendars, etc.).
+The wallboard package loads all configuration from files in `/config/wallboard/`.
 
-*See [CONFIGURATION.md](CONFIGURATION.md) for full details.*
+1. **Create required config files:**
+   - `entities.yaml` - Maps your Home Assistant entity IDs (weather, calendars, etc.)
+   - `events.yaml` - Defines countdown events (holidays, birthdays)
+
+2. **Create optional config files (for school features):**
+   - `school_calendar.yaml` - School year dates, breaks, bus times
+   - `school_menus.yaml` - Lunch menu rotation
+
+3. **Edit each file** with your family's information:
+   - Open `entities.yaml` and replace placeholder entity IDs with your actual entities
+   - Find your entity IDs in **Developer Tools** → **States**
+
+4. **Restart Home Assistant** after creating or editing these files.
+
+*See [CONFIGURATION.md](CONFIGURATION.md) for full details on each file.*
 
 ---
 
