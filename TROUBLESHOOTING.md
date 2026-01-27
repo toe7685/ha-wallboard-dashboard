@@ -67,6 +67,41 @@ Fast fixes first, then deeper dives by category.
 
 ---
 
+### Config files not loading (school/events/entities missing)
+
+**Symptom:** Sensors show "Config not loaded", calendar entities aren't found, or school features don't work even though you created the config files.
+
+**Most common cause:** The config files don't exist in the correct location, have the wrong name, or Home Assistant hasn't been restarted after creating them.
+
+**Fix:**
+
+1. Verify the `/config/wallboard/` folder exists and contains your config files:
+   - `entities.yaml` (required)
+   - `events.yaml` (required)
+   - `school_calendar.yaml` (optional)
+   - `school_menus.yaml` (optional)
+
+2. Make sure you **removed the `.example` suffix** from the file names:
+   - ❌ `entities.yaml.example`
+   - ✅ `entities.yaml`
+
+3. **Restart Home Assistant** (Settings → System → Restart). Config files are loaded at startup.
+
+4. Check the config sensor state:
+   - Developer Tools → States → search for `sensor.wallboard_config`
+   - If "unavailable", the config files weren't found or have YAML syntax errors
+
+5. Check logs for YAML parsing errors:
+   - Settings → System → Logs
+   - Search for "wallboard" or "include"
+
+**Common mistakes:**
+- Files in `/config/wallboard/` but with `.example` suffix still attached
+- Files in wrong folder (e.g., `/config/` instead of `/config/wallboard/`)
+- YAML syntax errors in config files (use a YAML validator)
+
+---
+
 ## Weather Issues
 
 ### Weather shows "unavailable" or "unknown"

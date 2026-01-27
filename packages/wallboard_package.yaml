@@ -1,9 +1,15 @@
 # ╔═══════════════════════════════════════════════════════════════════════════╗
-# ║                     FAMILY WALLBOARD - CONFIGURATION                      ║
+# ║                     FAMILY WALLBOARD - PACKAGE                            ║
 # ║                                                                           ║
-# ║  INSTRUCTIONS:                                                            ║
-# ║  1. Search for [EDIT HERE] to find values you need to change.             ║
-# ║  2. Do not touch logic below the configuration sections.                  ║
+# ║  CONFIGURATION:                                                           ║
+# ║  This package loads configuration from /config/wallboard/:                ║
+# ║    - entities.yaml      (entity mappings)                                 ║
+# ║    - events.yaml        (countdown events)                                ║
+# ║    - school_calendar.yaml (school dates, breaks, bus times)               ║
+# ║    - school_menus.yaml  (lunch menus)                                     ║
+# ║                                                                           ║
+# ║  Copy the example files from examples/ to /config/wallboard/ and          ║
+# ║  customize them for your family. Then restart Home Assistant.             ║
 # ╚═══════════════════════════════════════════════════════════════════════════╝
 
 # ┌───────────────────────────────────────────────────────────────────────────┐
@@ -91,6 +97,19 @@ rest:
 
 template:
   # ─────────────────────────────────────────────────────────────────────────
+  # Configuration Loader - Loads external config files from /config/wallboard/
+  # ─────────────────────────────────────────────────────────────────────────
+  - sensor:
+      - name: "Wallboard Config"
+        unique_id: wallboard_config
+        state: "loaded"
+        attributes:
+          entities: !include /config/wallboard/entities.yaml
+          events: !include /config/wallboard/events.yaml
+          school_calendar: !include /config/wallboard/school_calendar.yaml
+          school_menus: !include /config/wallboard/school_menus.yaml
+
+  # ─────────────────────────────────────────────────────────────────────────
   # Clothing Recommendation Logic
   # ─────────────────────────────────────────────────────────────────────────
   - sensor:
@@ -112,54 +131,47 @@ template:
           {% else %}T-shirt{% endif %}
 
   # ─────────────────────────────────────────────────────────────────────────
-  # School Day Logic
+  # School Day Logic (reads from /config/wallboard/school_calendar.yaml)
   # ─────────────────────────────────────────────────────────────────────────
   - binary_sensor:
-      # ╔═════════════════════════════════════════════════════════════════════╗
-      # ║ [EDIT HERE] SCHOOL CALENDAR                                         ║
-      # ╚═════════════════════════════════════════════════════════════════════╝
       - name: "Wallboard School Day"
         unique_id: wallboard_school_day
         state: >
           {% if is_state('input_boolean.wallboard_school_day_override', 'on') %}
             true
           {% else %}
-            {% set d = now().date() %}
-            {% set ds = d.strftime('%Y-%m-%d') %}
+            {% set cfg = state_attr('sensor.wallboard_config', 'school_calendar') %}
+            {% if cfg is none %}false
+            {% else %}
+              {% set d = now().date() %}
+              {% set ds = d.strftime('%Y-%m-%d') %}
 
-            {# --- DATES (2025-2026 Example) --- #}
-            {% set start = ('2025-08-06' | as_datetime | as_local).date() %}
-            {% set end   = ('2026-05-22' | as_datetime | as_local).date() %}
+              {# Load dates from config #}
+              {% set start = (cfg.school_year_start | as_datetime | as_local).date() %}
+              {% set end   = (cfg.school_year_end | as_datetime | as_local).date() %}
+              {% set no_school = cfg.no_school_days | default([]) %}
 
-            {% set no_school = [
-              '2025-09-01', '2025-11-07', '2025-12-19', '2026-01-19', '2026-02-16'
-            ] %}
+              {# Check if in any break period #}
+              {% set ns = namespace(in_break=false) %}
+              {% for brk in (cfg.breaks | default([])) %}
+                {% if brk.start <= ds <= brk.end %}
+                  {% set ns.in_break = true %}
+                {% endif %}
+              {% endfor %}
 
-            {% set in_break =
-              ('2025-10-06' <= ds <= '2025-10-10') or
-              ('2025-11-26' <= ds <= '2025-11-28') or
-              ('2025-12-22' <= ds <= '2026-01-02') or
-              ('2026-04-06' <= ds <= '2026-04-10')
-            %}
-            {# --- END DATES --- #}
-
-            {{ (start <= d <= end) and (d.weekday() < 5) and (ds not in no_school) and (not in_break) }}
+              {{ (start <= d <= end) and (d.weekday() < 5) and (ds not in no_school) and (not ns.in_break) }}
+            {% endif %}
           {% endif %}
 
-      # ╔═════════════════════════════════════════════════════════════════════╗
-      # ║ [EDIT HERE] LATE START DAYS                                         ║
-      # ╚═════════════════════════════════════════════════════════════════════╝
       - name: "Wallboard Late Start Day"
         unique_id: wallboard_late_start_day
         state: >
+          {% set cfg = state_attr('sensor.wallboard_config', 'school_calendar') %}
           {% set ds = now().strftime('%Y-%m-%d') %}
-          {# --- DATES --- #}
-          {{ ds in [
-            '2026-01-07', '2026-01-21', '2026-02-04', '2026-02-18',
-            '2026-03-04', '2026-03-18', '2026-04-01', '2026-04-15',
-            '2026-04-29', '2026-05-13'
-          ] }}
-          {# --- END DATES --- #}
+          {% if cfg is none %}false
+          {% else %}
+            {{ ds in (cfg.late_start_days | default([])) }}
+          {% endif %}
 
       - name: "Wallboard Bus Timer Active"
         unique_id: wallboard_bus_timer_active
@@ -168,96 +180,103 @@ template:
           {% set is_school = test_mode or is_state('binary_sensor.wallboard_school_day', 'on') %}
           {% if not is_school %}false
           {% else %}
+            {% set cfg = state_attr('sensor.wallboard_config', 'school_calendar') %}
+            {% set bus_cfg = cfg.bus_schedule | default({}) if cfg else {} %}
             {% set cur = now().hour * 60 + now().minute %}
             {% set late = is_state('input_boolean.wallboard_late_start_test', 'on') if test_mode else is_state('binary_sensor.wallboard_late_start_day', 'on') %}
-            {% set offset = 40 if late else 0 %}
-            {# Bus times hardcoded here as fallback: 7:10 and 7:50 #}
-            {% set bus1 = 430 + offset %}
-            {% set bus2 = 470 + offset %}
-            {% set pre = 90 %}
-            {% set post = 3 %}
-            {% set d1 = bus1 - cur %}
-            {% set d2 = bus2 - cur %}
-            {{ (-post <= d1 <= pre) or (-post <= d2 <= pre) }}
+            {% set offset = (bus_cfg.late_start_offset | default(40)) if late else 0 %}
+            {% set bus_times = bus_cfg.normal_times | default([430, 470]) %}
+            {% set pre = bus_cfg.countdown_start_minutes | default(90) %}
+            {% set post = bus_cfg.countdown_end_minutes | default(3) %}
+            {% set ns = namespace(active=false) %}
+            {% for t in bus_times %}
+              {% set diff = (t + offset) - cur %}
+              {% if -post <= diff <= pre %}
+                {% set ns.active = true %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.active }}
           {% endif %}
 
   # ─────────────────────────────────────────────────────────────────────────
-  # School Lunch Sensors
+  # School Lunch Sensors (reads from /config/wallboard/school_menus.yaml)
   # ─────────────────────────────────────────────────────────────────────────
   - sensor:
-      # ╔═════════════════════════════════════════════════════════════════════╗
-      # ║ [EDIT HERE] SCHOOL 1 LUNCH                                          ║
-      # ╚═════════════════════════════════════════════════════════════════════╝
       - name: "Wallboard School 1 Lunch"
         unique_id: wallboard_school_1_lunch
         icon: mdi:food
         state: >
-          {% set start_date = '2026-01-05' %}
-          {% set start_cycle_index = 1 %}
-          
-          {% set menu = [
-            {0:["Chicken Nuggets","Salad"], 1:["Tacos","Taco Salad"], 2:["Pizza","Yogurt"], 3:["Pasta","Salad"], 4:["Chicken Sandwich","Salad"]},
-            {0:["Hot Dog","Salad"], 1:["Rice Bowl","Salad"], 2:["Pizza","Parfait"], 3:["Chicken Tenders","Salad"], 4:["Grilled Cheese","Soup"]},
-            {0:["French Toast","Salad"], 1:["Pizza","Tacos"], 2:["Cheeseburger","Parfait"], 3:["Popcorn Chicken","Salad"], 4:["Pizza Crunchers","Salad"]}
-          ] %}
-          
-          {% set current = now().date() %}
-          {% set days_passed = (current - (start_date | as_datetime | as_local).date()).days %}
-          {% set weeks_passed = (days_passed // 7) %}
-          {% set cycle_index = (start_cycle_index + weeks_passed) % 3 %}
-          {% set day_of_week = current.weekday() %}
-          
-          {% if days_passed < 0 %}School not started
-          {% elif day_of_week > 4 %}Weekend
-          {% elif not is_state('binary_sensor.wallboard_school_day', 'on') %}No School
-          {% else %}{{ menu[cycle_index][day_of_week][0] }} or {{ menu[cycle_index][day_of_week][1] }}{% endif %}
+          {% set cfg = state_attr('sensor.wallboard_config', 'school_menus') %}
+          {% if cfg is none %}Config not loaded
+          {% else %}
+            {% set start_date = cfg.menu_cycle_start | default('2026-01-05') %}
+            {% set start_cycle_index = cfg.starting_cycle_index | default(0) %}
+            {% set menus = cfg.school_1_menus | default([]) %}
+            {% set day_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'] %}
+            {% set sep = cfg.option_separator | default(' or ') %}
 
-      # ╔═════════════════════════════════════════════════════════════════════╗
-      # ║ [EDIT HERE] SCHOOL 2 LUNCH                                          ║
-      # ╚═════════════════════════════════════════════════════════════════════╝
+            {% set current = now().date() %}
+            {% set days_passed = (current - (start_date | as_datetime | as_local).date()).days %}
+            {% set weeks_passed = (days_passed // 7) %}
+            {% set cycle_index = (start_cycle_index + weeks_passed) % (menus | length) %}
+            {% set day_of_week = current.weekday() %}
+
+            {% if menus | length == 0 %}Menu not configured
+            {% elif days_passed < 0 %}School not started
+            {% elif day_of_week > 4 %}Weekend
+            {% elif not is_state('binary_sensor.wallboard_school_day', 'on') %}No School
+            {% else %}
+              {% set week_menu = menus[cycle_index] %}
+              {% set day_menu = week_menu[day_names[day_of_week]] | default([]) %}
+              {% if day_menu | length >= 2 %}{{ day_menu[0] }}{{ sep }}{{ day_menu[1] }}
+              {% elif day_menu | length == 1 %}{{ day_menu[0] }}
+              {% else %}Menu unavailable{% endif %}
+            {% endif %}
+          {% endif %}
+
       - name: "Wallboard School 2 Lunch"
         unique_id: wallboard_school_2_lunch
         icon: mdi:food
         state: >
-          {% set start_date = '2026-01-05' %}
-          {% set start_cycle_index = 1 %}
-          
-          {% set menu = [
-            {0:["French Toast","Calzone"], 1:["Walking Tacos","Pizza"], 2:["Mozzarella Sticks","Sandwich"], 3:["Patty","Bosco Sticks"], 4:["Pizza","Crispitos"]},
-            {0:["Burgers","Calzone"], 1:["Fish & Chips","Pizza"], 2:["Deep Dish","Sandwich"], 3:["Nuggets","Bosco Sticks"], 4:["Ravioli","Crispitos"]},
-            {0:["Rice Bowl","Calzone"], 1:["Taco Mac","Pizza"], 2:["Pizza","Sandwich"], 3:["Tenders","Bosco Sticks"], 4:["Pretzel","Crispitos"]}
-          ] %}
-          
-          {% set current = now().date() %}
-          {% set days_passed = (current - (start_date | as_datetime | as_local).date()).days %}
-          {% set weeks_passed = (days_passed // 7) %}
-          {% set cycle_index = (start_cycle_index + weeks_passed) % 3 %}
-          {% set day_of_week = current.weekday() %}
-          
-          {% if days_passed < 0 %}School not started
-          {% elif day_of_week > 4 %}Weekend
-          {% elif not is_state('binary_sensor.wallboard_school_day', 'on') %}No School
-          {% else %}{{ menu[cycle_index][day_of_week][0] }} or {{ menu[cycle_index][day_of_week][1] }}{% endif %}
+          {% set cfg = state_attr('sensor.wallboard_config', 'school_menus') %}
+          {% if cfg is none %}Config not loaded
+          {% else %}
+            {% set start_date = cfg.menu_cycle_start | default('2026-01-05') %}
+            {% set start_cycle_index = cfg.starting_cycle_index | default(0) %}
+            {% set menus = cfg.school_2_menus | default([]) %}
+            {% set day_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'] %}
+            {% set sep = cfg.option_separator | default(' or ') %}
 
-      # ╔═════════════════════════════════════════════════════════════════════╗
-      # ║ [EDIT HERE] COUNTDOWN EVENTS                                        ║
-      # ╚═════════════════════════════════════════════════════════════════════╝
+            {% set current = now().date() %}
+            {% set days_passed = (current - (start_date | as_datetime | as_local).date()).days %}
+            {% set weeks_passed = (days_passed // 7) %}
+            {% set cycle_index = (start_cycle_index + weeks_passed) % (menus | length) %}
+            {% set day_of_week = current.weekday() %}
+
+            {% if menus | length == 0 %}Menu not configured
+            {% elif days_passed < 0 %}School not started
+            {% elif day_of_week > 4 %}Weekend
+            {% elif not is_state('binary_sensor.wallboard_school_day', 'on') %}No School
+            {% else %}
+              {% set week_menu = menus[cycle_index] %}
+              {% set day_menu = week_menu[day_names[day_of_week]] | default([]) %}
+              {% if day_menu | length >= 2 %}{{ day_menu[0] }}{{ sep }}{{ day_menu[1] }}
+              {% elif day_menu | length == 1 %}{{ day_menu[0] }}
+              {% else %}Menu unavailable{% endif %}
+            {% endif %}
+          {% endif %}
+
+      # Countdown Events (reads from /config/wallboard/events.yaml)
       - name: "Wallboard Countdown Events"
         unique_id: wallboard_countdown_events
         state: "{{ now().strftime('%Y-%m-%d') }}"
         attributes:
           events: >
-            {{
-              [
-                {"title": "Valentine's Day", "date": "2/14", "icon": "mdi:heart-outline"},
-                {"title": "Easter", "date": "4/20/2025", "icon": "mdi:egg-easter"},
-                {"title": "Summer Break", "date": "5/23/2025", "icon": "mdi:beach"},
-                {"title": "Christmas", "date": "12/25", "icon": "mdi:pine-tree"}
-              ]
-            }}
+            {% set cfg = state_attr('sensor.wallboard_config', 'events') %}
+            {{ cfg.events | default([]) if cfg else [] }}
 
   # ─────────────────────────────────────────────────────────────────────────
-  # Trigger-based Sensors
+  # Trigger-based Sensors (reads calendars from /config/wallboard/entities.yaml)
   # ─────────────────────────────────────────────────────────────────────────
   - trigger:
       - platform: time_pattern
@@ -267,13 +286,20 @@ template:
     action:
       - action: calendar.get_events
         target:
-          # ════════════════════════════════════════════════════════════════════
-          # [CRITICAL] EDIT THESE CALENDARS TO MATCH YOUR SYSTEM
-          # ════════════════════════════════════════════════════════════════════
-          entity_id:
-            - calendar.family
-            - calendar.person_1
-            - calendar.person_2
+          entity_id: >
+            {% set cfg = state_attr('sensor.wallboard_config', 'entities') %}
+            {% if cfg %}
+              {% set calendars = [
+                cfg.calendar_family | default(none),
+                cfg.calendar_person_1 | default(none),
+                cfg.calendar_person_2 | default(none),
+                cfg.calendar_person_3 | default(none),
+                cfg.calendar_person_4 | default(none)
+              ] %}
+              {{ calendars | reject('eq', none) | reject('eq', 'none') | list }}
+            {% else %}
+              {{ ['calendar.family'] }}
+            {% endif %}
         data:
           start_date_time: "{{ now().isoformat() }}"
           duration:
@@ -353,6 +379,7 @@ template:
       - platform: homeassistant
         event: start
     sensor:
+      # Bus Countdown (reads from /config/wallboard/school_calendar.yaml)
       - name: "Wallboard Bus Countdown"
         unique_id: wallboard_bus_countdown
         state: >-
@@ -360,11 +387,15 @@ template:
           {% set is_school = test_mode or is_state('binary_sensor.wallboard_school_day', 'on') %}
           {% if not is_school %}idle
           {% else %}
+            {% set cfg = state_attr('sensor.wallboard_config', 'school_calendar') %}
+            {% set bus_cfg = cfg.bus_schedule | default({}) if cfg else {} %}
             {% set late = is_state('input_boolean.wallboard_late_start_test', 'on') if test_mode else is_state('binary_sensor.wallboard_late_start_day', 'on') %}
-            {% set offset = 40 if late else 0 %}
-            {# [EDIT HERE] BUS TIMES (minutes from midnight) #}
-            {% set bus_times = [430 + offset, 470 + offset] %}
-            {# [END EDIT] #}
+            {% set offset = (bus_cfg.late_start_offset | default(40)) if late else 0 %}
+            {% set base_times = bus_cfg.normal_times | default([430, 470]) %}
+            {% set bus_times = [] %}
+            {% for t in base_times %}
+              {% set bus_times = bus_times + [t + offset] %}
+            {% endfor %}
             {% set now_ts = as_timestamp(now()) %}
             {% set today = now().strftime('%Y-%m-%d') %}
             {% set candidates = namespace(list=[]) %}
