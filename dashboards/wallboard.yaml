@@ -462,25 +462,104 @@ views:
                 const m = Number(parts[0]);
                 const d = Number(parts[1]);
                 const y = normYear(parts[2]);
+
                 let dt = new Date(y, m - 1, d); dt.setHours(0,0,0,0);
                 let dtUTC = toUTC(dt);
+
+                // If no explicit year and the date already passed this year, roll to next year
                 if (parts.length < 3 && dtUTC < nowUTC) { dt.setFullYear(dt.getFullYear() + 1); dtUTC = toUTC(dt); }
+
                 return { ...e, dt, days: daysBetween(nowUTC, dtUTC) };
               });
 
-              const future = parsed.filter(e => e.days >= 0).sort((a,b) => a.dt - b.dt).slice(0, 4);
+              const future = parsed
+                .filter(e => e.days >= 0)
+                .sort((a,b) => a.dt - b.dt)
+                .slice(0, 4);
 
               const pill = (e, i) => {
                 const hero = i === 0;
-                let num = String(e.days);
-                let sub = "Days";
-                if (e.days === 0) { num = "0"; sub = "Today"; }
-                else if (e.days === 1) { num = "1"; sub = "Tomorrow"; }
+
+                const isToday = e.days === 0;
+                const isTomorrow = e.days === 1;
+
+                const todayColor = "rgb(255,56,60)"; // Apple-ish red
+
                 const dateStr = e.dt.toLocaleDateString('en-US', { month:'short', day:'numeric', weekday: hero ? 'short' : undefined });
-                return `<div style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:${hero?'14px':'10px 12px'};border-radius:16px;background:${hero?'#FFFFFF':'rgba(245,245,247,0.92)'};box-shadow:${hero?'0 4px 10px rgba(0,0,0,0.04)':'none'};border:${hero?'1px solid rgba(17,24,39,0.06)':'none'};"><div style="width:46px;height:46px;border-radius:16px;background:${hero?'rgba(10,132,255,0.10)':'rgba(17,24,39,0.06)'};display:flex;align-items:center;justify-content:center;"><ha-icon icon="${e.icon}" style="width:24px;height:24px;color:${hero?'#0A84FF':'rgba(17,24,39,0.55)'};"></ha-icon></div><div style="flex:1;min-width:0;"><div style="font-weight:${hero?'800':'700'};font-size:${hero?'18px':'15px'};color:${hero?'#111827':'rgba(17,24,39,0.85)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.title}</div><div style="font-size:12px;font-weight:500;color:rgba(17,24,39,0.50);margin-top:2px;">${dateStr}</div></div><div style="text-align:right;min-width:60px;"><div style="font-size:${hero?'34px':'28px'};font-weight:900;letter-spacing:-0.02em;line-height:1;color:#1F2937;">${num}</div><div style="font-size:11px;text-transform:uppercase;font-weight:800;letter-spacing:0.10em;color:rgba(17,24,39,0.40);margin-top:4px;">${sub}</div></div></div>`;
+
+                // Icon styling (match today state)
+                const iconBg = isToday
+                  ? "rgba(255,56,60,0.12)"
+                  : (hero ? "rgba(10,132,255,0.10)" : "rgba(17,24,39,0.06)");
+
+                const iconColor = isToday
+                  ? todayColor
+                  : (hero ? "#0A84FF" : "rgba(17,24,39,0.55)");
+
+                // Right-side render
+                let rightHtml = "";
+
+                if (isToday) {
+                  // Remove number entirely, promote TODAY, align to middle line
+                  rightHtml =
+                    `<div style="text-align:right; min-width:60px; display:flex; align-items:center; justify-content:flex-end;">
+                       <div style="
+                         font-size:${hero ? '18px' : '16px'};
+                         font-weight:900;
+                         letter-spacing:0.12em;
+                         text-transform:uppercase;
+                         color:${todayColor};
+                         transform:translateY(-6px);
+                         line-height:1;
+                       ">Today</div>
+                     </div>`;
+                } else {
+                  const num = String(e.days);
+                  const sub = isTomorrow ? "Tomorrow" : "Days";
+
+                  rightHtml =
+                    `<div style="text-align:right; min-width:60px;">
+                       <div style="font-size:${hero ? '34px' : '28px'}; font-weight:900; letter-spacing:-0.02em; line-height:1; color:#1F2937;">${num}</div>
+                       <div style="font-size:11px; text-transform:uppercase; font-weight:800; letter-spacing:0.10em; color:rgba(17,24,39,0.40); margin-top:4px;">${sub}</div>
+                     </div>`;
+                }
+
+                return `
+                  <div style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:14px;
+                              padding:${hero ? '14px 14px' : '10px 12px'};
+                              border-radius:16px;
+                              background:${hero ? '#FFFFFF' : 'rgba(245,245,247,0.92)'};
+                              box-shadow:${hero ? '0 4px 10px rgba(0,0,0,0.04)' : 'none'};
+                              border:${hero ? '1px solid rgba(17,24,39,0.06)' : 'none'};">
+                    <div style="width:46px;height:46px;border-radius:16px;background:${iconBg};
+                                display:flex;align-items:center;justify-content:center;">
+                      <ha-icon icon="${e.icon}" style="width:24px;height:24px;color:${iconColor};"></ha-icon>
+                    </div>
+
+                    <div style="flex:1;min-width:0;">
+                      <div style="font-weight:${hero ? '800' : '700'};
+                                  font-size:${hero ? '18px' : '15px'};
+                                  color:${hero ? '#111827' : 'rgba(17,24,39,0.85)'};
+                                  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                        ${e.title}
+                      </div>
+                      <div style="font-size:12px;font-weight:500;color:rgba(17,24,39,0.50);margin-top:2px;">
+                        ${dateStr}
+                      </div>
+                    </div>
+
+                    ${rightHtml}
+                  </div>
+                `;
               };
 
-              return `<div style="width:100%;height:100%;padding:16px 24px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;">${future.map((e,i)=>pill(e,i)).join('')}</div>`;
+              return `
+                <div style="width:100%;height:100%;
+                            padding:16px 24px;box-sizing:border-box;
+                            display:flex;flex-direction:column;justify-content:space-between;">
+                  ${future.map((e,i)=>pill(e,i)).join('')}
+                </div>
+              `;
             ]]]
 
       # ════════════════════════════════════════════════════════════════════════
